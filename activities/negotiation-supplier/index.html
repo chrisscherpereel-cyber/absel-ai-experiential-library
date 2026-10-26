@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Supplier Negotiation</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #fff; --ink: #1d2330; --muted: #5b6475; --line: #dde1e8;
+    --accent: #1f5fa8; --accent-ink: #fff; --them: #eef1f6; --you: #dcebfb; --warn: #8a5a00; --warn-bg: #fff4dc;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151b; --panel: #1b1f27; --ink: #e6e9ef; --muted: #9aa3b2; --line: #2e3440;
+      --accent: #5b9be0; --accent-ink: #0b1220; --them: #252b36; --you: #1f3550; --warn: #f0c36a; --warn-bg: #3a2f17;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { padding: 14px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  header h1 { margin: 0; font-size: 1.15rem; }
+  header p { margin: 2px 0 0; color: var(--muted); font-size: .9rem; }
+  main { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 16px; max-width: 1200px; margin: 0 auto; padding: 16px; }
+  @media (max-width: 820px) { main { grid-template-columns: minmax(0, 1fr); } }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+  .brief h2 { margin: 0 0 8px; font-size: 1rem; }
+  .brief ul { padding-left: 1.1em; margin: 6px 0 12px; }
+  .brief li { margin: 3px 0; }
+  .brief small { color: var(--muted); }
+  .chat { display: flex; flex-direction: column; min-height: 70vh; padding: 0; }
+  #log { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .msg { max-width: 85%; padding: 10px 12px; border-radius: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .msg.them { background: var(--them); align-self: flex-start; border-bottom-left-radius: 4px; }
+  .msg.you { background: var(--you); align-self: flex-end; border-bottom-right-radius: 4px; }
+  .msg .who { display: block; font-size: .75rem; color: var(--muted); margin-bottom: 2px; }
+  .notice { align-self: center; text-align: center; font-size: .9rem; color: var(--warn); background: var(--warn-bg); padding: 8px 12px; border-radius: 8px; }
+  form { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--line); }
+  textarea { flex: 1; resize: vertical; min-height: 48px; max-height: 200px; padding: 10px; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; }
+  button { font: inherit; border: 0; border-radius: 8px; padding: 10px 16px; cursor: pointer; background: var(--accent); color: var(--accent-ink); }
+  button.secondary { background: transparent; color: var(--accent); border: 1px solid var(--line); }
+  button:disabled { opacity: .55; cursor: default; }
+  .tools { display: flex; gap: 8px; flex-wrap: wrap; justify-content: space-between; align-items: center; padding: 0 12px 12px; color: var(--muted); font-size: .85rem; }
+  .tools div { display: flex; gap: 8px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Supplier Negotiation: Brightline Robotics × Northgate Components</h1>
+  <p>An AI plays your counterpart, Dana Reyes. Both companies are fictional.</p>
+</header>
+
+<main>
+  <section class="card brief" aria-labelledby="brief-title">
+    <h2 id="brief-title">Your brief (confidential)</h2>
+    <p>You are the procurement manager at <strong>Brightline Robotics</strong>. You need <strong>5,000 TS-40 temperature sensors</strong> for a new product line.</p>
+    <ul>
+      <li>Northgate's list price is <strong>$42.00</strong> per unit.</li>
+      <li>Your budget target is <strong>$36.00</strong>. Your boss has authorized up to <strong>$38.00</strong>.</li>
+      <li>The launch date requires delivery in <strong>8 weeks or less</strong>.</li>
+      <li>Finance prefers <strong>net 60</strong> payment terms.</li>
+      <li>You forecast about <strong>12,000 units a year</strong> for the next two years, but nothing is committed.</li>
+    </ul>
+    <h2>Your task</h2>
+    <p>Negotiate the best overall deal you can. Price matters, but so do delivery, payment terms, warranty and contract length. You may walk away.</p>
+    <small>Don't enter personal information. Your messages are sent to an AI service to generate Dana's replies and are not saved by this site. Download your transcript when you finish.</small>
+  </section>
+
+  <section class="card chat" aria-label="Negotiation">
+    <div id="log" aria-live="polite"></div>
+    <form id="composer">
+      <label for="input" class="sr-only" style="position:absolute;left:-9999px">Your message</label>
+      <textarea id="input" placeholder="Write to Dana… (Enter to send, Shift+Enter for a new line)" required></textarea>
+      <button id="send" type="submit">Send</button>
+    </form>
+    <div class="tools">
+      <span id="status"></span>
+      <div>
+        <button class="secondary" id="download" type="button">Download transcript</button>
+        <button class="secondary" id="restart" type="button">Start over</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+(function () {
+  var config = window.ABSEL_AIL || null; // Injected by the WordPress plugin when served to a member or student link.
+  var OPENING = "Hi, Dana Reyes from Northgate Components. Thanks for reaching out about the TS-40s. I understand you're looking at around 5,000 units? Happy to talk through pricing and timing.";
+  var STORAGE_KEY = 'absel-negotiation-supplier';
+
+  var log = document.getElementById('log');
+  var input = document.getElementById('input');
+  var send = document.getElementById('send');
+  var status = document.getElementById('status');
+  var form = document.getElementById('composer');
+
+  // The API conversation must start with the user, so Dana's scripted opening is display-only.
+  var messages = load();
+  var finished = false;
+  render();
+
+  function load() {
+    try { return JSON.parse(sessionStorage.getItem(STORAGE_KEY)) || []; } catch (e) { return []; }
+  }
+  function save() {
+    try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(messages)); } catch (e) {}
+  }
+
+  function bubble(role, text) {
+    var div = document.createElement('div');
+    div.className = 'msg ' + (role === 'user' ? 'you' : 'them');
+    var who = document.createElement('span');
+    who.className = 'who';
+    who.textContent = role === 'user' ? 'You' : 'Dana Reyes';
+    div.appendChild(who);
+    div.appendChild(document.createTextNode(text));
+    log.appendChild(div);
+  }
+  function notice(text) {
+    var div = document.createElement('div');
+    div.className = 'notice';
+    div.textContent = text;
+    log.appendChild(div);
+  }
+
+  function render() {
+    log.textContent = '';
+    finished = false;
+    if (!config) notice('Preview mode: this page is not connected to the AI service, so Dana gives placeholder replies.');
+    bubble('assistant', OPENING);
+    messages.forEach(function (m) {
+      var shown = m.content.replace(/\n?\[(DEAL REACHED|NO DEAL)\]\s*$/, '');
+      bubble(m.role, shown);
+      if (m.role === 'assistant' && shown !== m.content) {
+        finished = true;
+        notice(/DEAL REACHED/.test(m.content) ? 'Deal reached. Download your transcript for the debrief.' : 'No deal. Download your transcript for the debrief.');
+      }
+    });
+    setBusy(false);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function setBusy(busy) {
+    send.disabled = busy || finished;
+    input.disabled = busy || finished;
+    status.textContent = busy ? 'Dana is typing…' : status.dataset.remaining || '';
+  }
+
+  function ask() {
+    if (!config) {
+      return new Promise(function (resolve) {
+        setTimeout(function () { resolve({ reply: "(Preview) That's an interesting point. Let me think about what we can do on our side." }); }, 600);
+      });
+    }
+    var headers = { 'Content-Type': 'application/json' };
+    if (config.restNonce) headers['X-WP-Nonce'] = config.restNonce;
+    return fetch(config.endpoint, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: headers,
+      body: JSON.stringify({ activity: config.activity, token: config.token, classPass: config.classPass, messages: messages })
+    }).then(function (res) {
+      return res.json().catch(function () { return {}; }).then(function (data) {
+        if (!res.ok) throw new Error(data.message || 'Something went wrong (' + res.status + '). Try again.');
+        return data;
+      });
+    });
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var text = input.value.trim();
+    if (!text || finished) return;
+    messages.push({ role: 'user', content: text });
+    input.value = '';
+    render();
+    setBusy(true);
+    ask().then(function (data) {
+      messages.push({ role: 'assistant', content: data.reply });
+      if (typeof data.remaining === 'number' && data.remaining <= 20) {
+        status.dataset.remaining = data.remaining + ' AI replies left today';
+      }
+      save();
+      render();
+    }).catch(function (err) {
+      messages.pop(); // Let the student resend the same message.
+      input.value = text;
+      render();
+      notice(err.message);
+      log.scrollTop = log.scrollHeight;
+    });
+  });
+
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      form.requestSubmit();
+    }
+  });
+
+  document.getElementById('restart').addEventListener('click', function () {
+    if (messages.length && !confirm('Start a new negotiation? The current conversation will be cleared.')) return;
+    messages = [];
+    save();
+    render();
+  });
+
+  document.getElementById('download').addEventListener('click', function () {
+    var lines = ['Supplier Negotiation transcript', new Date().toLocaleString(), '', 'Dana Reyes: ' + OPENING];
+    messages.forEach(function (m) { lines.push('', (m.role === 'user' ? 'You: ' : 'Dana Reyes: ') + m.content); });
+    var blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'negotiation-transcript.txt';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "title": "Negotiating with an AI Supplier",
+  "slug": "negotiation-supplier",
+  "summary": "Students negotiate a multi-issue component purchase with an AI sales manager who has hidden interests, a walk-away price and quota pressure.",
+  "ai_topics": ["AI as a role-play partner", "Human–AI interaction"],
+  "disciplines": ["Negotiation", "Supply Chain Management", "Purchasing"],
+  "format": ["In-class", "Asynchronous"],
+  "duration": "50–75 minutes (20–30 min negotiation, 30–45 min debrief)",
+  "group_size": "Individuals or pairs",
+  "level": "Undergraduate or MBA",
+  "uses_ai_api": true,
+  "version": "0.1.0",
+  "authors": [],
+  "license": "For use by ABSEL members in their own courses. Do not redistribute."
+}
