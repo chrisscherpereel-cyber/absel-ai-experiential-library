@@ -163,7 +163,7 @@
           "audience": { "enum": ["instructor-only", "student-facing"] },
           "notes": { "type": ["string", "null"], "maxLength": 300 }
         },
-        "if": { "properties": { "role": { "enum": ["instructor-guide", "teaching-notes", "answer-key"] } } },
+        "if": { "required": ["role"], "properties": { "role": { "enum": ["instructor-guide", "teaching-notes", "answer-key"] } } },
         "then": { "properties": { "audience": { "const": "instructor-only" } } }
       }
     },

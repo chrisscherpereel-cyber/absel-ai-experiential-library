@@ -3,9 +3,9 @@
 This prompt helps you get an exercise ready for the ABSEL Exercise Library. You run it in an AI assistant you already use (ChatGPT, Claude, Microsoft Copilot, Gemini or similar). The assistant reads your materials, asks you a few questions, then gives you:
 
 1. **A submission review:** which file is which, what's missing, and problems to fix before you submit.
-2. **A `manifest.json` file:** the indexing information that the submission form loads, so you don't have to type it in.
+2. **A draft of the exercise's details:** the indexing information the library needs, which the submission page loads so you don't have to type it in.
 
-Using AI is optional. You can fill in the submission form by hand instead.
+The easiest way to use it is from the **Submit an exercise** page ([`submit.html`](submit.html)), which has a button that copies this prompt and a box for pasting the assistant's reply. This document is the same prompt with fuller instructions. Using AI is optional: the submission page also works as an ordinary form.
 
 ## Before you start
 
@@ -15,13 +15,13 @@ Using AI is optional. You can fill in the submission form by hand instead.
 
 ## How to use it
 
-1. Start a new chat in your AI assistant.
+1. Start a new chat in your AI assistant. A personal account or your school's enterprise account (such as Microsoft Copilot) both work.
 2. Attach all the files for the exercise: instructor guide, student handouts, slides, spreadsheets, and so on. If the assistant can't open a file type (some can't read slides or zip files), export it to PDF, or paste its text into the chat with a heading naming the file.
-3. Copy everything in the box below and paste it into the chat. Send it.
+3. Copy everything in the box below (or use **Copy the ABSEL prompt** on the submission page), paste it into the chat and send it.
 4. Answer the assistant's questions.
 5. Read the submission review and fix anything it flags in your files.
-6. Save the manifest: copy the code block into a plain-text file named `manifest.json`, or download it if the assistant offers a file.
-7. On absel.org, open **Submit an exercise**, upload `manifest.json` and your files, and check every field. **You are responsible for what's submitted**, and AI assistants make mistakes.
+6. Copy the assistant's **whole final reply** and paste it into the box on the submission page. You don't need to tidy it: the page finds the draft inside the reply, fixes common formatting slips, and shows the review alongside the form.
+7. Check each section of the form. Pick-lists are buttons, problems are marked in red with plain explanations, and yellow notes show where the page changed or couldn't use one of the assistant's values. Your edits are saved in your browser as you go. **You are responsible for what's submitted**, and AI assistants make mistakes.
 
 ## The prompt
 
@@ -195,5 +195,6 @@ Begin with Step 1 now.
 ## If something goes wrong
 
 - **The assistant skips the questions** and goes straight to the manifest: reply "Please go back to Step 2 and ask your questions first."
-- **The form rejects your manifest:** it lists each problem, usually a value that isn't on the allowed list or a summary that's too short or long. Fix it in the form, or paste the error message into the chat and ask the assistant to correct the manifest.
-- **The manifest gets something wrong:** correct it in the form. The form is the final version, not the AI's draft.
+- **The page says it can't find a draft:** you probably copied only part of the reply. Copy the whole final reply, or ask the assistant: "Please give me the manifest again as valid JSON in one code block."
+- **The draft gets something wrong:** correct it in the form. The form is the final version, not the AI's draft.
+- **You want to finish later:** your edits stay in that browser. To move to another computer, use **Download manifest.json** and then **Open a saved manifest.json** there.

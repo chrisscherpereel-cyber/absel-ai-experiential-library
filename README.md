@@ -6,8 +6,12 @@ Source for ABSEL's members-only library of AI experiential learning activities a
 activities/              one folder per activity (see activities/_template/README.md)
   negotiation-supplier/  working example: negotiate with a rule-based supplier agent
 schema/                  indexing rules: exercise.schema.json + INDEXING-RULES.md
-author-kit/              author-prompt.md: drafts a manifest with the author's own AI assistant
-tools/check_library.py   validates manifests and packages; keeps the rules and prompt in sync
+author-kit/
+  author-prompt.md       prompt authors run in their own AI assistant to draft a manifest
+  submit.html            submission page: copy the prompt, paste the AI's reply, edit, download
+tools/
+  check_library.py       validates manifests and packages; keeps rules, prompt and page in sync
+  build_form.py          copies the schema and prompt into submit.html (run after changing either)
 wp-plugin/
   absel-ai-library/      WordPress plugin that publishes and protects the library
 ```

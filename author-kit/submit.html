@@ -1,0 +1,1392 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Submit an Exercise</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #fff; --ink: #1d2330; --muted: #5b6475; --line: #dde1e8;
+    --accent: #1f5fa8; --accent-ink: #fff; --chip: #eef1f6; --good: #1d6b35; --good-bg: #e8f4ec;
+    --warn: #8a5a00; --warn-bg: #fff4dc; --bad: #a12a2a; --bad-bg: #fbeaea;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151b; --panel: #1b1f27; --ink: #e6e9ef; --muted: #9aa3b2; --line: #2e3440;
+      --accent: #5b9be0; --accent-ink: #0b1220; --chip: #252b36; --good: #7fd59b; --good-bg: #1f3326;
+      --warn: #f0c36a; --warn-bg: #3a2f17; --bad: #f08a8a; --bad-bg: #3a1f22;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header.top { padding: 14px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  header.top h1 { margin: 0; font-size: 1.2rem; }
+  header.top p { margin: 2px 0 0; color: var(--muted); font-size: .9rem; }
+  .wrap { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 16px; max-width: 1080px; margin: 0 auto; padding: 16px; }
+  .wrap.no-nav { grid-template-columns: minmax(0, 1fr); max-width: 820px; }
+  @media (max-width: 860px) { .wrap { grid-template-columns: minmax(0, 1fr); } }
+  nav.side { position: sticky; top: 16px; align-self: start; }
+  @media (max-width: 860px) { nav.side { position: static; } }
+  nav.side ol { list-style: none; margin: 0; padding: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  nav.side li + li { border-top: 1px solid var(--line); }
+  nav.side a { display: flex; justify-content: space-between; gap: 8px; padding: 9px 12px; color: var(--ink); text-decoration: none; font-size: .92rem; }
+  nav.side a:hover { background: var(--chip); }
+  .badge { font-size: .78rem; border-radius: 999px; padding: 1px 8px; white-space: nowrap; align-self: center; }
+  .badge.ok { background: var(--good-bg); color: var(--good); }
+  .badge.todo { background: var(--bad-bg); color: var(--bad); }
+  main { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; scroll-margin-top: 12px; }
+  h2 { margin: 0 0 8px; font-size: 1.05rem; display: flex; align-items: center; gap: 8px; }
+  h3 { margin: 0 0 4px; font-size: 1.02rem; }
+  .num { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: .85rem; flex: none; }
+  .muted { color: var(--muted); }
+  .small { font-size: .88rem; }
+  ol.steps { margin: 8px 0; padding-left: 1.3em; }
+  ol.steps li { margin: 6px 0; }
+  pre.prompt, pre.review { white-space: pre-wrap; overflow-wrap: anywhere; font: .82rem/1.45 ui-monospace, SFMono-Regular, Consolas, monospace; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px; max-height: 340px; overflow: auto; }
+  pre.review { font-family: inherit; font-size: .9rem; }
+  details > summary { cursor: pointer; color: var(--accent); }
+  .field { margin: 14px 0 0; min-width: 0; }
+  .field > label, .field > .lbl { display: block; font-weight: 600; font-size: .93rem; margin-bottom: 4px; }
+  .opt { font-weight: 400; color: var(--muted); font-size: .85rem; }
+  input[type=text], input[type=email], textarea, select { width: 100%; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-width: 0; }
+  textarea { resize: vertical; }
+  input:focus, textarea:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .field.show-err > input, .field.show-err > textarea, .field.show-err > select, .field.show-err .inline input { border-color: var(--bad); }
+  .hint { font-size: .84rem; color: var(--muted); margin-top: 4px; }
+  .err, .warn, .ai-note { font-size: .86rem; margin-top: 6px; border-radius: 6px; }
+  .err { color: var(--bad); }
+  .warn { color: var(--warn); }
+  .ai-note { background: var(--warn-bg); color: var(--warn); padding: 6px 10px; }
+  .err:empty, .warn:empty, .ai-note:empty { display: none; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0 12px; }
+  .inline { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .inline input[type=text] { width: 7em; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { font: inherit; font-size: .9rem; background: var(--chip); color: var(--ink); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+  .chip:hover { border-color: var(--accent); }
+  .chip[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .chip .ord { font-size: .72rem; background: var(--accent-ink); color: var(--accent); border-radius: 999px; padding: 0 6px; }
+  .chip.full { opacity: .5; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+  .tag { display: inline-flex; align-items: center; gap: 4px; background: var(--chip); border: 1px solid var(--line); border-radius: 999px; padding: 3px 4px 3px 11px; font-size: .9rem; max-width: 100%; overflow-wrap: anywhere; }
+  .tag button { background: transparent; color: var(--muted); border: 0; padding: 0 6px; font-size: 1rem; line-height: 1; cursor: pointer; }
+  .tag-entry { display: flex; gap: 8px; }
+  .row { border: 1px solid var(--line); border-radius: 8px; padding: 4px 12px 12px; margin: 10px 0 0; background: var(--bg); }
+  .row input[type=text], .row input[type=email], .row textarea, .row select { background: var(--panel); }
+  .row-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px; font-size: .88rem; color: var(--muted); }
+  .obj { display: flex; gap: 8px; align-items: flex-start; margin-top: 8px; }
+  .obj textarea { flex: 1; }
+  button { font: inherit; border: 0; border-radius: 8px; padding: 9px 14px; cursor: pointer; background: var(--accent); color: var(--accent-ink); }
+  button.secondary, label.button.secondary { background: transparent; color: var(--accent); border: 1px solid var(--line); }
+  label.button { display: inline-block; border-radius: 8px; padding: 9px 14px; cursor: pointer; }
+  button.link { background: none; color: var(--accent); padding: 0; text-decoration: underline; }
+  button.icon { background: transparent; color: var(--muted); border: 1px solid var(--line); padding: 4px 10px; font-size: .85rem; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; align-items: center; }
+  .check { display: flex; gap: 10px; align-items: flex-start; font-weight: 400 !important; cursor: pointer; }
+  .check input { margin-top: .3em; width: 1.05em; height: 1.05em; flex: none; }
+  .radio-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px; }
+  .radio-cards label { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; display: flex; gap: 8px; cursor: pointer; font-weight: 400; }
+  .radio-cards label:has(input:checked) { border-color: var(--accent); background: var(--chip); }
+  .radio-cards small { display: block; color: var(--muted); }
+  .meter { font-size: .84rem; color: var(--muted); margin-top: 4px; }
+  .meter.bad { color: var(--warn); }
+  .msg { border-radius: 8px; padding: 10px 12px; margin-top: 10px; font-size: .92rem; }
+  .msg.ok { background: var(--good-bg); color: var(--good); }
+  .msg.bad { background: var(--bad-bg); color: var(--bad); }
+  .msg.info { background: var(--chip); }
+  .msg ul { margin: 6px 0 0; padding-left: 1.2em; }
+  .problems { margin: 8px 0 0; padding-left: 1.2em; }
+  .problems li { margin: 3px 0; }
+  .problems a { color: var(--ink); }
+  .file-state { font-size: .82rem; }
+  .file-state.ok { color: var(--good); }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>Submit an exercise</h1>
+  <p>ABSEL Exercise Library. Your AI assistant drafts the details; you check and edit them here.</p>
+</header>
+
+<div class="wrap no-nav" id="wrap">
+  <nav class="side" id="nav" aria-label="Form sections" hidden></nav>
+  <main>
+    <section class="card" id="sec-start">
+      <h2><span class="num">1</span> Get a draft from your AI assistant</h2>
+      <ol class="steps">
+        <li>Open the AI assistant you use, with a personal account or your school's enterprise account (for example ChatGPT, Claude, Microsoft Copilot or Gemini), and start a new chat.</li>
+        <li>Attach your exercise files: instructor guide, handouts, slides, spreadsheets. If it can't open a file, export it to PDF or paste the text.</li>
+        <li><button type="button" data-action="copy-prompt">Copy the ABSEL prompt</button> <span id="copy-status" class="small muted" role="status"></span><br>Paste it into the chat and send it.
+          <details><summary class="small">Show the prompt</summary><pre class="prompt" id="prompt-view"></pre></details></li>
+        <li>Answer the assistant's questions. It then gives you a review of your files and a draft of the details.</li>
+      </ol>
+      <p class="small muted">Check your school's AI policy, and remove student names, grades and identifiable student work from your files first. Not using AI? <button type="button" class="link" data-action="blank">Fill in the form yourself</button>.</p>
+    </section>
+
+    <section class="card" id="sec-import">
+      <h2><span class="num">2</span> Paste the assistant's reply</h2>
+      <p class="small">Copy the assistant's <strong>whole final reply</strong> and paste it here. You don't need to tidy it; this page finds the draft inside it.</p>
+      <textarea id="paste" rows="6" placeholder="Paste the reply here" aria-label="Assistant's reply"></textarea>
+      <div class="actions">
+        <button type="button" data-action="import">Load the draft</button>
+        <label class="button secondary">Open a saved manifest.json<input type="file" id="manifest-file" accept=".json,application/json" hidden></label>
+      </div>
+      <div id="import-msg" role="status"></div>
+    </section>
+
+    <div id="editor" hidden>
+      <div class="card" id="ai-review" hidden>
+        <details>
+          <summary><strong>Your assistant's review of your files</strong></summary>
+          <p class="small muted">Fix anything it lists under "Must fix" in your files before submitting.</p>
+          <pre class="review" id="ai-review-text"></pre>
+        </details>
+      </div>
+      <h2 style="margin:8px 0 0"><span class="num">3</span> Check and edit</h2>
+      <p class="small muted" style="margin:0">Your changes are saved in this browser as you go.</p>
+      <section class="card" id="sec-basics"></section>
+      <section class="card" id="sec-authors"></section>
+      <section class="card" id="sec-classify"></section>
+      <section class="card" id="sec-logistics"></section>
+      <section class="card" id="sec-materials"></section>
+      <section class="card" id="sec-evidence"></section>
+      <section class="card" id="sec-rights"></section>
+      <section class="card" id="sec-finish"></section>
+    </div>
+  </main>
+</div>
+
+<script type="application/json" id="absel-schema">
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://absel.org/schema/exercise/1.0/manifest.schema.json",
+  "title": "ABSEL Exercise Library manifest",
+  "description": "Indexing information for one exercise. Saved as manifest.json in the exercise's folder. Field rules and definitions of every allowed value are in schema/INDEXING-RULES.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "title", "slug", "summary", "authors",
+    "exercise_types", "disciplines", "topics", "learning_objectives",
+    "levels", "delivery_modes", "duration", "class_size", "materials",
+    "rights", "license", "version", "author_confirmed"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+
+    "title": { "type": "string", "minLength": 5, "maxLength": 120 },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "maxLength": 60,
+      "description": "Folder name and URL. Lowercase words joined by hyphens."
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 300,
+      "maxLength": 1400,
+      "description": "60-180 words for an instructor deciding whether to use the exercise. Shown publicly in the catalog."
+    },
+    "description": {
+      "type": ["string", "null"],
+      "maxLength": 6000,
+      "description": "Optional longer overview for members. Never include confidential information such as answer keys."
+    },
+
+    "authors": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string", "minLength": 2 },
+          "affiliation": { "type": ["string", "null"] },
+          "email": { "type": ["string", "null"], "format": "email", "description": "Private: used by editors, never displayed." },
+          "orcid": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{4}-\\d{4}-\\d{3}[\\dX]$" },
+          "corresponding": { "type": "boolean", "default": false }
+        }
+      }
+    },
+
+    "exercise_types": {
+      "type": "array", "minItems": 1, "maxItems": 3, "uniqueItems": true,
+      "items": { "enum": [
+        "simulation", "role-play", "game", "case-discussion", "structured-exercise",
+        "team-project", "field-assignment", "reflection-or-debrief-tool", "assessment-instrument"
+      ] }
+    },
+    "disciplines": {
+      "type": "array", "minItems": 1, "maxItems": 3, "uniqueItems": true,
+      "description": "First item is the primary discipline.",
+      "items": { "enum": [
+        "accounting", "business-analytics", "business-communication", "business-ethics",
+        "business-law", "economics", "entrepreneurship", "finance", "general-management",
+        "human-resource-management", "information-systems", "international-business",
+        "leadership", "marketing", "negotiation", "operations-management",
+        "organizational-behavior", "project-management", "strategy",
+        "supply-chain-management", "sustainability"
+      ] }
+    },
+    "courses": {
+      "type": "array", "maxItems": 5, "uniqueItems": true,
+      "description": "Typical course titles, free text, e.g. \"Principles of Marketing\".",
+      "items": { "type": "string", "minLength": 3, "maxLength": 80 }
+    },
+    "topics": {
+      "type": "array", "minItems": 3, "maxItems": 12, "uniqueItems": true,
+      "description": "Search keywords: concepts an instructor would type.",
+      "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9 &'/-]*$", "maxLength": 40 }
+    },
+    "learning_objectives": {
+      "type": "array", "minItems": 2, "maxItems": 8,
+      "items": { "type": "string", "minLength": 15, "maxLength": 300 }
+    },
+    "skills": {
+      "type": "array", "maxItems": 5, "uniqueItems": true,
+      "items": { "enum": [
+        "written-communication", "oral-communication", "critical-thinking",
+        "quantitative-reasoning", "data-literacy", "ethical-reasoning", "teamwork",
+        "leadership", "decision-making", "negotiation-and-persuasion",
+        "cross-cultural-competence", "creativity-and-innovation", "technology-agility",
+        "ai-literacy", "reflective-thinking"
+      ] }
+    },
+
+    "levels": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": { "enum": [
+        "undergraduate-introductory", "undergraduate-advanced", "graduate",
+        "executive-education", "doctoral"
+      ] }
+    },
+    "delivery_modes": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": { "enum": ["in-person", "online-synchronous", "online-asynchronous", "hybrid"] }
+    },
+    "duration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["in_class_minutes", "sessions"],
+      "properties": {
+        "in_class_minutes": { "$ref": "#/$defs/range", "description": "Total class time across all sessions, including debrief. 0 if none." },
+        "sessions": { "type": "integer", "minimum": 1 },
+        "out_of_class_hours": { "type": ["number", "null"], "minimum": 0, "description": "Student time outside class." }
+      }
+    },
+    "class_size": { "$ref": "#/$defs/range", "description": "Students in the whole class. max null means no upper limit." },
+    "group_size": { "$ref": "#/$defs/range", "description": "Students per team. 1-1 means individual work." },
+    "prep_time_minutes": { "type": ["integer", "null"], "minimum": 0, "description": "Instructor preparation the first time." },
+    "technology": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": { "enum": [
+        "none", "projector", "student-devices", "internet", "lms",
+        "spreadsheet-software", "specialized-software"
+      ] }
+    },
+    "technology_notes": { "type": ["string", "null"], "maxLength": 500 },
+    "cost_to_students": { "enum": ["free", "under-25", "25-to-75", "over-75"] },
+    "ai_involvement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["topic_is_ai", "students_use_ai"],
+      "properties": {
+        "topic_is_ai": { "type": "boolean", "description": "The exercise teaches about AI." },
+        "students_use_ai": { "enum": ["none", "optional", "required"] },
+        "notes": { "type": ["string", "null"], "maxLength": 500 }
+      }
+    },
+
+    "materials": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["title", "role", "audience"],
+        "anyOf": [{ "required": ["file"] }, { "required": ["url"] }],
+        "properties": {
+          "file": {
+            "type": "string",
+            "pattern": "^(?![_.])(?!.*\\.\\.)(?!.*/[_.])[A-Za-z0-9._ /-]+$",
+            "description": "File name within the exercise folder. No leading _ or ."
+          },
+          "url": { "type": "string", "format": "uri", "pattern": "^https://" },
+          "title": { "type": "string", "minLength": 3, "maxLength": 120 },
+          "role": { "enum": [
+            "instructor-guide", "teaching-notes", "answer-key", "debrief-guide",
+            "student-instructions", "role-brief", "case-text", "reading", "slides",
+            "simulation", "data-file", "template-or-worksheet", "rubric", "assessment",
+            "video", "other"
+          ] },
+          "audience": { "enum": ["instructor-only", "student-facing"] },
+          "notes": { "type": ["string", "null"], "maxLength": 300 }
+        },
+        "if": { "required": ["role"], "properties": { "role": { "enum": ["instructor-guide", "teaching-notes", "answer-key"] } } },
+        "then": { "properties": { "audience": { "const": "instructor-only" } } }
+      }
+    },
+
+    "classroom_testing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["times_used"],
+      "properties": {
+        "times_used": { "type": "integer", "minimum": 0 },
+        "contexts": { "type": ["string", "null"], "maxLength": 500, "description": "Courses, levels and class sizes it was used with." }
+      }
+    },
+    "evidence_of_effectiveness": { "type": ["string", "null"], "maxLength": 1500 },
+    "prior_publications": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["citation"],
+        "properties": {
+          "citation": { "type": "string", "minLength": 10 },
+          "doi": { "type": ["string", "null"], "pattern": "^10\\.\\d{4,9}/\\S+$" },
+          "url": { "type": ["string", "null"], "format": "uri" }
+        }
+      }
+    },
+
+    "rights": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["author_owns_or_has_permission", "third_party_materials", "contains_identifiable_student_information"],
+      "properties": {
+        "author_owns_or_has_permission": { "type": "boolean" },
+        "third_party_materials": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["description", "status"],
+            "properties": {
+              "description": { "type": "string", "minLength": 5 },
+              "status": { "enum": ["permission-obtained", "openly-licensed", "public-domain", "needs-review"] }
+            }
+          }
+        },
+        "contains_identifiable_student_information": {
+          "const": false,
+          "description": "Must be false. Remove student names, grades and identifiable work before submitting."
+        }
+      }
+    },
+    "license": { "enum": ["absel-member-use", "cc-by-nc-4.0", "cc-by-nc-sa-4.0", "cc-by-4.0"] },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+(\\.\\d+)?$" },
+    "version_notes": { "type": ["string", "null"], "maxLength": 1000 },
+
+    "generated_with": { "type": ["string", "null"], "maxLength": 80, "description": "AI tool that drafted this manifest, if any." },
+    "author_confirmed": { "type": "boolean", "description": "Set to true only by the submission form after the author reviews every field." }
+  },
+
+  "$defs": {
+    "range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["min", "max"],
+      "properties": {
+        "min": { "type": "integer", "minimum": 0 },
+        "max": { "type": ["integer", "null"], "minimum": 0 }
+      }
+    }
+  }
+}
+</script>
+<script type="text/plain" id="absel-prompt">
+You are helping a university business instructor prepare an experiential exercise for the ABSEL Exercise Library, a members-only collection of simulations, role-plays and other experiential exercises for business courses. The instructor has attached the exercise's files (or pasted their text). Your job is to index the exercise accurately and check the package. You are not rewriting the exercise.
+
+Work in three steps.
+
+STEP 1: READ AND INVENTORY
+Read every file. If you can't open a file, say so and ask me to paste its text or export it to PDF. Don't guess at its contents.
+
+STEP 2: ASK ME QUESTIONS, THEN WAIT
+Ask me, in one numbered list, about everything you need that the materials don't clearly state. Keep it to 12 questions or fewer, and group related items. Always ask about the following unless the materials answer it:
+- author names, affiliations, emails and ORCID iDs, and who is the contact author;
+- how many times I've used the exercise with real students, and in which courses, levels and class sizes;
+- any evidence it works (student feedback, assessment results, publications);
+- prior publications of the exercise, such as ABSEL Developments proceedings;
+- whether anything in the materials was created by someone else (published cases, publisher slides, images, articles, software) and whether I have permission;
+- which license I want (list the four options below);
+- anything about class size, timing, prep time or technology that the materials leave unclear.
+Then stop and wait for my answers. Do not produce Step 3 until I reply.
+
+STEP 3: PRODUCE TWO THINGS
+
+Part A: Submission review (plain text, not JSON)
+1. Files: a table with each file's exact name, a short title, its role and its audience, using the allowed values below.
+2. Missing: anything a complete package should have but doesn't. A complete package has an instructor guide covering learning objectives, timing, setup, how to run it and debrief questions, plus everything students need.
+3. Must fix before submitting:
+   - any student names, grades or identifiable student work;
+   - third-party material without clear permission;
+   - answers, solutions or hidden information inside a file meant for students;
+   - inconsistencies between files (for example, different timings or numbers in the guide and the handout).
+   Quote or locate each problem precisely. If there are none, say so.
+4. Suggestions (optional, at most 5): improvements that would make the exercise easier for another instructor to adopt.
+5. Still needed: any manifest field you left null because neither the materials nor I provided it.
+
+Part B: manifest.json
+One JSON code block that follows the format and rules below exactly.
+
+RULES FOR THE MANIFEST
+- Never invent facts. Use only what the materials or I state. If an optional value is unknown, use null or leave the field out. If a required value is unknown, use null and list it under "Still needed".
+- For list fields with allowed values, use only the values listed below, spelled exactly (lowercase, hyphenated). Never make up a new value. If nothing fits well, choose the closest and mention it in the review.
+- Keep everything confidential out of the title, summary, description and topics: answer keys, hidden parameters, the "twist", what the other side really wants. These fields are shown to more people than the instructor guide.
+- title: 5-120 characters, descriptive (not just a product name).
+- slug: lowercase words joined by hyphens, at most 60 characters, based on the title.
+- summary: 60-180 words, in the third person, for an instructor deciding whether to use the exercise. Say what students do, what they learn and what it takes to run. No marketing language.
+- description: optional longer overview for members (structure, variations), or null.
+- learning_objectives: 2-8 items. Each completes "Students will be able to..." but leaves those words out, and starts with an assessable verb (explain, apply, calculate, compare, evaluate, design, negotiate, justify). Never use understand, learn, appreciate or be exposed to. Base them on the materials' own objectives where they exist.
+- topics: 3-12 lowercase search keywords for the concepts taught, in the terms an instructor would search for (textbook names of concepts, e.g. "escalation of commitment", "bullwhip effect"). Don't repeat discipline names. Spell out abbreviations unless the abbreviation is the common search term.
+- courses: up to 5 typical course titles in plain words.
+- disciplines: 1-3, primary first. Tag where it's taught, not every field it touches.
+- exercise_types: 1-3, most important first.
+- skills: up to 5, only skills students actually practice.
+- levels and delivery_modes: only those the exercise was designed for or used with, not ones it could in theory be adapted to.
+- duration.in_class_minutes: total class time across all sessions, including the debrief, as {"min": n, "max": n}. Use 0 for a fully out-of-class exercise.
+- class_size and group_size: {"min": n, "max": n}. Use "max": null for no upper limit. Use {"min": 1, "max": 1} for individual work.
+- materials: one entry per file, using the exact file name as given. instructor-guide, teaching-notes and answer-key are always instructor-only. Use "url" instead of "file" for something hosted elsewhere.
+- rights.contains_identifiable_student_information must be false. If the files contain student information, set it to false anyway, and put removing it at the top of "Must fix before submitting".
+- version: "1.0" unless I say otherwise.
+- generated_with: the name of your AI product and model.
+- author_confirmed: always false. The instructor confirms on the submission form.
+- schema_version: always "1.0".
+- Output valid JSON only inside the code block: double quotes, no comments, no trailing commas.
+
+ALLOWED VALUES
+
+exercise_types:
+- simulation: students make decisions in a model that responds to them
+- role-play: students act out roles with confidential briefs
+- game: rules, scoring and competition are central
+- case-discussion: a case with an experiential component
+- structured-exercise: a guided in-class activity that isn't one of the above
+- team-project: multi-week team work with deliverables
+- field-assignment: students work outside the classroom (interviews, observation)
+- reflection-or-debrief-tool: a reusable debrief or reflection instrument
+- assessment-instrument: a rubric, test or measure for experiential learning
+
+disciplines: accounting, business-analytics, business-communication, business-ethics, business-law, economics, entrepreneurship, finance, general-management (only for genuinely cross-functional exercises), human-resource-management, information-systems, international-business, leadership, marketing, negotiation, operations-management, organizational-behavior, project-management, strategy, supply-chain-management, sustainability
+
+skills: written-communication, oral-communication, critical-thinking, quantitative-reasoning, data-literacy, ethical-reasoning, teamwork, leadership, decision-making, negotiation-and-persuasion, cross-cultural-competence, creativity-and-innovation, technology-agility, ai-literacy, reflective-thinking
+
+levels: undergraduate-introductory (first or second year), undergraduate-advanced (upper division), graduate (master's, including MBA), executive-education, doctoral
+
+delivery_modes: in-person, online-synchronous (live video class), online-asynchronous (students work on their own schedule), hybrid (some students in the room and some online at the same time)
+
+technology: none, projector, student-devices (laptops, tablets or phones), internet, lms (course learning management system), spreadsheet-software, specialized-software (anything students must install or buy; explain in technology_notes)
+
+cost_to_students (US dollars per student): free, under-25, 25-to-75, over-75
+
+ai_involvement.students_use_ai: none, optional, required
+
+materials role:
+- instructor-guide: main guide (always instructor-only)
+- teaching-notes: supplementary notes, variations, tips (always instructor-only)
+- answer-key: solutions, scoring keys, hidden parameters (always instructor-only)
+- debrief-guide: debrief questions and discussion plan
+- student-instructions: instructions for all students
+- role-brief: confidential instructions for one role
+- case-text: case or scenario text
+- reading: background reading
+- slides
+- simulation: the simulation itself, such as an HTML file
+- data-file
+- template-or-worksheet: forms students fill in
+- rubric
+- assessment: quiz, test or survey
+- video
+- other: explain in notes
+
+materials audience: instructor-only, student-facing
+
+rights.third_party_materials status: permission-obtained, openly-licensed, public-domain, needs-review (use needs-review whenever permission is unclear)
+
+license:
+- absel-member-use: members may use and adapt it in their own courses, no redistribution (default)
+- cc-by-nc-4.0: anyone may share and adapt it non-commercially, with credit
+- cc-by-nc-sa-4.0: as above, and adaptations must use the same license
+- cc-by-4.0: anyone may share and adapt it for any purpose, with credit
+
+MANIFEST FORMAT
+Fill in this structure. Optional fields are marked; keep them (with null or an empty list) if unknown.
+
+{
+  "schema_version": "1.0",
+  "title": "",
+  "slug": "",
+  "summary": "",
+  "description": null,                       // optional
+  "authors": [
+    { "name": "", "affiliation": "", "email": "", "orcid": null, "corresponding": true }
+  ],
+  "exercise_types": [],
+  "disciplines": [],
+  "courses": [],                             // optional
+  "topics": [],
+  "learning_objectives": [],
+  "skills": [],                              // optional
+  "levels": [],
+  "delivery_modes": [],
+  "duration": { "in_class_minutes": { "min": 0, "max": 0 }, "sessions": 1, "out_of_class_hours": null },
+  "class_size": { "min": 0, "max": null },
+  "group_size": { "min": 1, "max": 1 },      // optional
+  "prep_time_minutes": null,                 // optional
+  "technology": [],
+  "technology_notes": null,                  // optional
+  "cost_to_students": "free",                // optional
+  "ai_involvement": { "topic_is_ai": false, "students_use_ai": "none", "notes": null },   // optional
+  "materials": [
+    { "file": "", "title": "", "role": "", "audience": "", "notes": null }
+  ],
+  "classroom_testing": { "times_used": 0, "contexts": null },   // optional
+  "evidence_of_effectiveness": null,         // optional
+  "prior_publications": [],                  // optional; items: { "citation": "", "doi": null, "url": null }
+  "rights": {
+    "author_owns_or_has_permission": true,
+    "third_party_materials": [],             // items: { "description": "", "status": "" }
+    "contains_identifiable_student_information": false
+  },
+  "license": "absel-member-use",
+  "version": "1.0",
+  "version_notes": null,                     // optional
+  "generated_with": "",
+  "author_confirmed": false
+}
+
+(The // notes above are for you. Leave them out of your output.)
+
+Begin with Step 1 now.
+</script>
+<script>
+(() => {
+  'use strict';
+  // The schema and prompt above are filled in by tools/build_form.py from schema/ and author-kit/author-prompt.md.
+  const SCHEMA = JSON.parse(document.getElementById('absel-schema').textContent);
+  const PROMPT = document.getElementById('absel-prompt').textContent.trim();
+  const P = SCHEMA.properties;
+  const MAT = P.materials.items.properties;
+  const ENUM = {
+    exercise_types: P.exercise_types.items.enum, disciplines: P.disciplines.items.enum,
+    skills: P.skills.items.enum, levels: P.levels.items.enum, delivery_modes: P.delivery_modes.items.enum,
+    technology: P.technology.items.enum, cost_to_students: P.cost_to_students.enum,
+    students_use_ai: P.ai_involvement.properties.students_use_ai.enum,
+    role: MAT.role.enum, audience: MAT.audience.enum,
+    status: P.rights.properties.third_party_materials.items.properties.status.enum, license: P.license.enum,
+  };
+  const LOCKED_ROLES = P.materials.items.if.properties.role.enum;
+  const STORE_KEY = 'absel-submit-draft-v1';
+  const BIG_FILE = 100 * 1024 * 1024;
+
+  const LABELS = {
+    'lms': 'Course LMS', 'ai-literacy': 'AI literacy', 'student-devices': 'Student laptops or phones',
+    'spreadsheet-software': 'Spreadsheet software', 'specialized-software': 'Specialized software',
+    'online-synchronous': 'Online, live', 'online-asynchronous': 'Online, self-paced',
+    'undergraduate-introductory': 'Undergraduate, introductory', 'undergraduate-advanced': 'Undergraduate, advanced',
+    'graduate': "Graduate (master's, MBA)", 'free': 'Free', 'under-25': 'Under $25', '25-to-75': '$25 to $75', 'over-75': 'Over $75',
+    'instructor-only': 'Instructor only', 'student-facing': 'Students may see it',
+    'permission-obtained': 'I have permission', 'openly-licensed': 'Openly licensed (e.g. Creative Commons)',
+    'public-domain': 'Public domain', 'needs-review': 'Not sure',
+    'absel-member-use': 'ABSEL members only', 'cc-by-nc-4.0': 'CC BY-NC 4.0', 'cc-by-nc-sa-4.0': 'CC BY-NC-SA 4.0', 'cc-by-4.0': 'CC BY 4.0',
+    'none': 'None', 'role-play': 'Role-play',
+  };
+  const HINTS = {
+    exercise_types: {
+      'simulation': 'Students make decisions in a model that responds to them.',
+      'role-play': 'Students act out roles with confidential briefs.',
+      'game': 'Rules, scoring and competition are central.',
+      'case-discussion': 'A case with an experiential component.',
+      'structured-exercise': "A guided in-class activity that isn't one of the others.",
+      'team-project': 'Multi-week team work with deliverables.',
+      'field-assignment': 'Students work outside the classroom, e.g. interviews.',
+      'reflection-or-debrief-tool': 'A reusable debrief or reflection instrument.',
+      'assessment-instrument': 'A rubric, test or measure for experiential learning.',
+    },
+    license: {
+      'absel-member-use': 'Members may use and adapt it in their own courses. No redistribution.',
+      'cc-by-nc-4.0': 'Anyone may share and adapt it non-commercially, with credit.',
+      'cc-by-nc-sa-4.0': 'As BY-NC, and adaptations must use the same license.',
+      'cc-by-4.0': 'Anyone may share and adapt it for any purpose, with credit.',
+    },
+  };
+  // Words assistants commonly use instead of an allowed value.
+  const SYNONYMS = {
+    'mba': 'graduate', 'masters': 'graduate', 'master-s': 'graduate', 'graduate-mba': 'graduate',
+    'in-class': 'in-person', 'face-to-face': 'in-person', 'classroom': 'in-person',
+    'synchronous': 'online-synchronous', 'asynchronous': 'online-asynchronous',
+    'purchasing': 'supply-chain-management', 'procurement': 'supply-chain-management',
+    'hr': 'human-resource-management', 'human-resources': 'human-resource-management',
+    'ob': 'organizational-behavior', 'ethics': 'business-ethics', 'analytics': 'business-analytics',
+    'operations': 'operations-management', 'mis': 'information-systems', 'international': 'international-business',
+    'laptops': 'student-devices', 'instructor': 'instructor-only', 'student': 'student-facing', 'students': 'student-facing',
+    'cc-by-nc': 'cc-by-nc-4.0', 'cc-by-nc-sa': 'cc-by-nc-sa-4.0', 'cc-by': 'cc-by-4.0',
+  };
+  const WEAK_VERBS = /^(understand|learn|know|appreciate|be (exposed|aware|familiar)|gain|become aware)\b/i;
+  const SECTIONS = [
+    ['basics', 'Basics', ['title', 'slug', 'summary', 'description', 'version', 'version_notes']],
+    ['authors', 'Authors', ['authors']],
+    ['classify', 'What it teaches', ['exercise_types', 'disciplines', 'topics', 'learning_objectives', 'courses', 'skills']],
+    ['logistics', 'Running it', ['levels', 'delivery_modes', 'duration', 'class_size', 'group_size', 'prep_time_minutes', 'technology', 'technology_notes', 'cost_to_students', 'ai_involvement']],
+    ['materials', 'Files', ['materials']],
+    ['evidence', 'Testing and evidence', ['classroom_testing', 'evidence_of_effectiveness', 'prior_publications']],
+    ['rights', 'Rights and license', ['rights', 'license']],
+    ['finish', 'Finish', ['author_confirmed', 'generated_with', 'schema_version']],
+  ];
+
+  let st = null;            // form state: strings for every text and number field
+  let issues = {};          // path -> notes about values the assistant gave that needed attention
+  let review = '';          // the assistant's text around the draft
+  let slugTouched = false, showAll = false;
+  let touched = new Set();
+  let result = { errs: [], warns: [] };
+  const attached = new Map(); // file name -> File (kept in memory only)
+
+  // ---------- helpers ----------
+  const $ = (sel) => document.querySelector(sel);
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const pid = (p) => p.replace(/\./g, '-');
+  const join = (p, k) => (p === '' ? String(k) : p + '.' + k);
+  const label = (v) => LABELS[v] || (v.charAt(0).toUpperCase() + v.slice(1).replace(/-/g, ' '));
+  const get = (path) => path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), st);
+  function set(path, value) {
+    const keys = path.split('.'); const last = keys.pop();
+    keys.reduce((o, k) => o[k], st)[last] = value;
+  }
+  const words = (s) => (s.trim() ? s.trim().split(/\s+/).length : 0);
+  const slugify = (s) => String(s).toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '')
+    .replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60).replace(/-+$/, '');
+  const normValue = (v) => String(v).toLowerCase().trim().replace(/&/g, ' and ').replace(/[^a-z0-9.]+/g, '-').replace(/^-+|-+$/g, '');
+  const normTopic = (t) => String(t).toLowerCase().replace(/[‘’]/g, "'").replace(/[^a-z0-9 &'\/-]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const fmtSize = (n) => (n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB');
+
+  function blank() {
+    return {
+      title: '', slug: '', summary: '', description: '',
+      authors: [{ name: '', affiliation: '', email: '', orcid: '', corresponding: true }],
+      exercise_types: [], disciplines: [], courses: [], topics: [], learning_objectives: ['', ''], skills: [],
+      levels: [], delivery_modes: [],
+      duration: { in_class_minutes: { min: '', max: '' }, sessions: '1', out_of_class_hours: '' },
+      class_size: { min: '', max: '', nolimit: false }, group_size: { min: '', max: '' }, prep_time_minutes: '',
+      technology: [], technology_notes: '', cost_to_students: '',
+      ai_involvement: { topic_is_ai: false, students_use_ai: 'none', notes: '' },
+      materials: [], classroom_testing: { times_used: '', contexts: '' }, evidence_of_effectiveness: '', prior_publications: [],
+      rights: { owns: false, third_party_materials: [], no_student_info: false },
+      license: 'absel-member-use', version: '1.0', version_notes: '', generated_with: '', author_confirmed: false,
+    };
+  }
+
+  // ---------- reading the assistant's reply ----------
+  function tryParse(text) {
+    const attempts = [
+      (s) => s,
+      (s) => s.replace(/^﻿/, '').replace(/ /g, ' ')
+        .replace(/(^|[\s,{\[])\/\/[^\n]*/g, '$1')       // // comments (not the // in https://)
+        .replace(/,(\s*[}\]])/g, '$1'),                   // trailing commas
+      (s) => s.replace(/[“”]/g, '"'),          // curly quotes used as JSON quotes
+    ];
+    let s = text;
+    for (const fix of attempts) {
+      s = fix(s);
+      try { const v = JSON.parse(s); if (v && typeof v === 'object' && !Array.isArray(v)) return v; } catch (e) { /* try the next fix */ }
+    }
+    return null;
+  }
+  function extractDraft(text) {
+    const found = [];
+    const fence = /```[\w-]*[ \t]*\r?\n([\s\S]*?)```/g;
+    let m;
+    while ((m = fence.exec(text))) found.push({ body: m[1], start: m.index, end: m.index + m[0].length });
+    found.reverse(); // the manifest is normally the last block
+    const first = text.indexOf('{'), last = text.lastIndexOf('}');
+    if (first >= 0 && last > first) found.push({ body: text.slice(first, last + 1), start: first, end: last + 1 });
+    for (const c of found) {
+      const data = tryParse(c.body);
+      if (data && ('title' in data || 'summary' in data || 'materials' in data)) {
+        return { data, rest: (text.slice(0, c.start) + '\n' + text.slice(c.end)).replace(/\n{3,}/g, '\n\n').trim() };
+      }
+    }
+    return null;
+  }
+
+  function fromManifest(raw) {
+    const s = blank(); const notes = {};
+    const note = (path, text) => { (notes[path] = notes[path] || []).push(text); };
+    const str = (v) => (v == null ? '' : typeof v === 'string' ? v.trim() : String(v));
+    const num = (v) => (v == null || v === '' ? '' : String(v).trim());
+    const list = (v) => (Array.isArray(v) ? v : v == null || v === '' ? [] : String(v).split(/[,;\n]/)).map(str).filter(Boolean);
+    const bool = (v) => v === true || /^(true|yes)$/i.test(str(v));
+    function pick(v, allowed, path) {
+      const raw0 = str(v); if (!raw0) return '';
+      const n = normValue(raw0);
+      if (allowed.includes(n)) return n;
+      if (SYNONYMS[n] && allowed.includes(SYNONYMS[n])) {
+        note(path, `Your assistant wrote “${raw0}”, so “${label(SYNONYMS[n])}” is selected. Change it if that's wrong.`);
+        return SYNONYMS[n];
+      }
+      note(path, `Your assistant suggested “${raw0}”, which isn't one of the options. Choose the closest one.`);
+      return '';
+    }
+    const pickMany = (key, allowed) => [...new Set(list(raw[key]).map((v) => pick(v, allowed, key)).filter(Boolean))];
+
+    s.title = str(raw.title);
+    s.slug = str(raw.slug) || slugify(s.title);
+    s.summary = str(raw.summary);
+    s.description = str(raw.description);
+    const authors = (Array.isArray(raw.authors) ? raw.authors : raw.authors ? [raw.authors] : []).map((a) => (typeof a === 'string'
+      ? { name: a.trim(), affiliation: '', email: '', orcid: '', corresponding: false }
+      : { name: str(a.name), affiliation: str(a.affiliation), email: str(a.email), orcid: str(a.orcid), corresponding: bool(a.corresponding) }));
+    if (authors.length) {
+      s.authors = authors;
+      const c = s.authors.findIndex((a) => a.corresponding);
+      s.authors.forEach((a, i) => { a.corresponding = i === (c < 0 ? 0 : c); });
+    }
+    for (const key of ['exercise_types', 'disciplines', 'skills', 'levels', 'delivery_modes', 'technology']) s[key] = pickMany(key, ENUM[key]);
+    s.courses = list(raw.courses);
+    s.topics = [...new Set(list(raw.topics).map(normTopic).filter(Boolean))];
+    const objectives = list(Array.isArray(raw.learning_objectives) ? raw.learning_objectives : str(raw.learning_objectives).split('\n'))
+      .map((o) => o.replace(/^[-*•\d.)\s]+/, '').replace(/^students will be able to[:,]?\s*/i, '').trim()).filter(Boolean)
+      .map((o) => o.charAt(0).toUpperCase() + o.slice(1));
+    if (objectives.length) s.learning_objectives = objectives;
+
+    const d = raw.duration || {};
+    const icm = d.in_class_minutes;
+    if (icm != null && typeof icm === 'object') s.duration.in_class_minutes = { min: num(icm.min), max: num(icm.max) };
+    else if (icm != null) s.duration.in_class_minutes = { min: num(icm), max: num(icm) };
+    s.duration.sessions = num(d.sessions) || '1';
+    s.duration.out_of_class_hours = num(d.out_of_class_hours);
+    if (raw.class_size && typeof raw.class_size === 'object') {
+      s.class_size = { min: num(raw.class_size.min), max: num(raw.class_size.max), nolimit: 'max' in raw.class_size && raw.class_size.max === null };
+    }
+    if (raw.group_size && typeof raw.group_size === 'object') s.group_size = { min: num(raw.group_size.min), max: num(raw.group_size.max) };
+    s.prep_time_minutes = num(raw.prep_time_minutes);
+    s.technology_notes = str(raw.technology_notes);
+    s.cost_to_students = pick(raw.cost_to_students, ENUM.cost_to_students, 'cost_to_students');
+    const ai = raw.ai_involvement || {};
+    s.ai_involvement = { topic_is_ai: bool(ai.topic_is_ai), students_use_ai: pick(ai.students_use_ai, ENUM.students_use_ai, 'ai_involvement.students_use_ai') || 'none', notes: str(ai.notes) };
+
+    s.materials = (Array.isArray(raw.materials) ? raw.materials : []).map((m, i) => {
+      if (typeof m === 'string') m = { file: m };
+      const role = pick(m.role, ENUM.role, `materials.${i}.role`);
+      let audience = pick(m.audience, ENUM.audience, `materials.${i}.audience`);
+      if (LOCKED_ROLES.includes(role) && audience !== 'instructor-only') {
+        if (audience) note(`materials.${i}.audience`, `Your assistant marked this “${label(audience)}”, but this type of file is always instructor only.`);
+        audience = 'instructor-only';
+      }
+      return { loc: str(m.file || m.url || m.filename || m.name), title: str(m.title), role, audience, notes: str(m.notes) };
+    });
+    const ct = raw.classroom_testing || {};
+    s.classroom_testing = { times_used: num(ct.times_used), contexts: str(ct.contexts) };
+    s.evidence_of_effectiveness = str(raw.evidence_of_effectiveness);
+    s.prior_publications = (Array.isArray(raw.prior_publications) ? raw.prior_publications : [])
+      .map((p) => (typeof p === 'string' ? { citation: p, doi: '', url: '' } : { citation: str(p.citation), doi: str(p.doi), url: str(p.url) }))
+      .filter((p) => p.citation || p.doi || p.url);
+    const r = raw.rights || {};
+    s.rights.third_party_materials = (Array.isArray(r.third_party_materials) ? r.third_party_materials : [])
+      .map((t, i) => (typeof t === 'string' ? { description: t, status: 'needs-review' }
+        : { description: str(t.description), status: pick(t.status, ENUM.status, `rights.third_party_materials.${i}.status`) }));
+    // The two rights statements are left for the author to tick personally.
+    if ('license' in raw) s.license = pick(raw.license, ENUM.license, 'license');
+    s.version = str(raw.version) || '1.0';
+    s.version_notes = str(raw.version_notes);
+    s.generated_with = str(raw.generated_with);
+    s.author_confirmed = false;
+    const ignored = Object.keys(raw).filter((k) => !(k in P));
+    return { state: s, notes, ignored, slugGiven: !!str(raw.slug) };
+  }
+
+  // ---------- form state -> manifest ----------
+  function toManifest(s) {
+    const opt = (v) => (v.trim() === '' ? null : v.trim());
+    const int = (v) => { v = String(v).trim(); return v === '' ? undefined : /^\d+$/.test(v) ? parseInt(v, 10) : v; };
+    const numb = (v) => { v = String(v).trim(); return v === '' ? null : /^\d+(\.\d+)?$/.test(v) ? parseFloat(v) : v; };
+    const clean = (o) => { Object.keys(o).forEach((k) => o[k] === undefined && delete o[k]); return o; };
+    const m = {
+      schema_version: '1.0', title: s.title.trim(), slug: s.slug.trim(), summary: s.summary.trim(), description: opt(s.description),
+      authors: s.authors.map((a) => ({ name: a.name.trim(), affiliation: opt(a.affiliation), email: opt(a.email), orcid: opt(a.orcid), corresponding: a.corresponding })),
+      exercise_types: s.exercise_types, disciplines: s.disciplines, courses: s.courses, topics: s.topics,
+      learning_objectives: s.learning_objectives.map((o) => o.trim()), skills: s.skills, levels: s.levels, delivery_modes: s.delivery_modes,
+      duration: clean({ in_class_minutes: clean({ min: int(s.duration.in_class_minutes.min), max: int(s.duration.in_class_minutes.max) }), sessions: int(s.duration.sessions), out_of_class_hours: numb(s.duration.out_of_class_hours) }),
+      class_size: clean({ min: int(s.class_size.min), max: s.class_size.nolimit ? null : int(s.class_size.max) }),
+    };
+    if (s.group_size.min.trim() || s.group_size.max.trim()) m.group_size = clean({ min: int(s.group_size.min), max: int(s.group_size.max) });
+    const prep = int(s.prep_time_minutes);
+    m.prep_time_minutes = prep === undefined ? null : prep;
+    m.technology = s.technology;
+    m.technology_notes = opt(s.technology_notes);
+    if (s.cost_to_students) m.cost_to_students = s.cost_to_students;
+    m.ai_involvement = { topic_is_ai: s.ai_involvement.topic_is_ai, students_use_ai: s.ai_involvement.students_use_ai, notes: opt(s.ai_involvement.notes) };
+    m.materials = s.materials.map((r) => {
+      const loc = r.loc.trim();
+      return clean({ [/^https?:\/\//i.test(loc) ? 'url' : 'file']: loc || undefined, title: r.title.trim(), role: r.role || undefined, audience: r.audience || undefined, notes: opt(r.notes) });
+    });
+    if (s.classroom_testing.times_used.trim() || s.classroom_testing.contexts.trim()) {
+      m.classroom_testing = clean({ times_used: int(s.classroom_testing.times_used), contexts: opt(s.classroom_testing.contexts) });
+    }
+    m.evidence_of_effectiveness = opt(s.evidence_of_effectiveness);
+    m.prior_publications = s.prior_publications.map((p) => ({ citation: p.citation.trim(), doi: opt(p.doi), url: opt(p.url) }));
+    m.rights = clean({
+      author_owns_or_has_permission: s.rights.owns,
+      third_party_materials: s.rights.third_party_materials.map((t) => clean({ description: t.description.trim(), status: t.status || undefined })),
+      contains_identifiable_student_information: s.rights.no_student_info ? false : undefined,
+    });
+    if (s.license) m.license = s.license;
+    m.version = s.version.trim();
+    m.version_notes = opt(s.version_notes);
+    m.generated_with = opt(s.generated_with);
+    m.author_confirmed = s.author_confirmed;
+    return m;
+  }
+
+  // ---------- validation against the embedded schema ----------
+  function resolve(s) { while (s && s.$ref) s = s.$ref.replace(/^#\//, '').split('/').reduce((o, k) => o[k], SCHEMA); return s; }
+  function typeOk(t, v) {
+    if (t === 'null') return v === null;
+    if (t === 'integer') return Number.isInteger(v);
+    if (t === 'number') return typeof v === 'number' && isFinite(v);
+    if (t === 'array') return Array.isArray(v);
+    if (t === 'object') return v !== null && typeof v === 'object' && !Array.isArray(v);
+    return typeof v === t;
+  }
+  function check(s, v, path, out) {
+    s = resolve(s);
+    if ('const' in s && v !== s.const) { out.push({ path, kw: 'const', s }); return; }
+    if (s.enum && !s.enum.includes(v)) { out.push({ path, kw: 'enum', s }); return; }
+    if (s.type) {
+      const types = [].concat(s.type);
+      if (!types.some((t) => typeOk(t, v))) { out.push({ path, kw: 'type', s, want: types.find((t) => t !== 'null') }); return; }
+    }
+    if (typeof v === 'string') {
+      const len = [...v].length;
+      if (s.minLength != null && len < s.minLength) out.push({ path, kw: 'minLength', s, v });
+      if (s.maxLength != null && len > s.maxLength) out.push({ path, kw: 'maxLength', s, v });
+      if (s.pattern && !new RegExp(s.pattern, 'u').test(v)) out.push({ path, kw: 'pattern', s, v });
+      if (s.format === 'email' && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) out.push({ path, kw: 'format', s });
+      if (s.format === 'uri') { try { new URL(v); } catch (e) { out.push({ path, kw: 'format', s }); } }
+    }
+    if (typeof v === 'number' && s.minimum != null && v < s.minimum) out.push({ path, kw: 'minimum', s });
+    if (Array.isArray(v)) {
+      if (s.minItems != null && v.length < s.minItems) out.push({ path, kw: 'minItems', s });
+      if (s.maxItems != null && v.length > s.maxItems) out.push({ path, kw: 'maxItems', s });
+      if (s.uniqueItems) {
+        const seen = new Set();
+        v.forEach((x, i) => { const k = JSON.stringify(x); if (seen.has(k)) out.push({ path: join(path, i), kw: 'uniqueItems', s }); seen.add(k); });
+      }
+      if (s.items) v.forEach((x, i) => check(s.items, x, join(path, i), out));
+    }
+    if (v !== null && typeof v === 'object' && !Array.isArray(v)) {
+      for (const r of s.required || []) if (!(r in v)) out.push({ path: join(path, r), kw: 'required', s });
+      for (const [k, x] of Object.entries(v)) {
+        if (s.properties && k in s.properties) check(s.properties[k], x, join(path, k), out);
+        else if (s.additionalProperties === false) out.push({ path: join(path, k), kw: 'additional', s });
+      }
+      if (s.anyOf && !s.anyOf.some((b) => { const o = []; check(b, v, path, o); return !o.length; })) out.push({ path, kw: 'anyOf', s });
+      if (s.if) { const o = []; check(s.if, v, path, o); if (!o.length && s.then) check(s.then, v, path, out); }
+    }
+  }
+
+  const PATTERN_MSG = {
+    slug: 'Use lowercase letters, numbers and hyphens only.', orcid: 'An ORCID iD looks like 0000-0002-1825-0097.',
+    topics: 'Use lowercase letters, numbers, spaces and hyphens only.', url: 'Links must start with https://',
+    file: "File names can't start with _ or . and can use only letters, numbers, spaces, dots, hyphens and underscores.",
+    version: 'Use a number like 1.0 or 1.2.', doi: 'A DOI looks like 10.1234/abcd.',
+  };
+  const MIN_ITEMS_MSG = {
+    exercise_types: 'Choose at least one.', disciplines: 'Choose at least one.', levels: 'Choose at least one.',
+    delivery_modes: 'Choose at least one.', technology: 'Choose at least one (or None).', topics: 'Add at least 3 keywords.',
+    learning_objectives: 'Add at least 2 objectives.', authors: 'Add at least one author.', materials: 'List at least one file.',
+  };
+  function message(e) {
+    const g = e.path.replace(/\.\d+/g, '.N');
+    const key = e.path.split('.').filter((p) => !/^\d+$/.test(p)).pop();
+    switch (e.kw) {
+      case 'required':
+        if (g === 'class_size.max') return 'Enter a maximum, or tick “No upper limit”.';
+        if (g === 'rights.contains_identifiable_student_information') return 'Tick to confirm before submitting.';
+        if (g === 'materials.N.role') return 'Choose what this file is.';
+        if (g === 'materials.N.audience') return 'Choose who may see it.';
+        if (g === 'license') return 'Choose a license.';
+        return 'Required.';
+      case 'minLength':
+        if (e.v === '') return 'Required.';
+        if (key === 'summary') return 'Too short: at least 300 characters (about 60 words).';
+        if (key === 'learning_objectives') return 'Write out the full objective.';
+        return `Too short: at least ${e.s.minLength} characters.`;
+      case 'maxLength': return `Too long: at most ${e.s.maxLength} characters.`;
+      case 'minItems': return MIN_ITEMS_MSG[key] || `Add at least ${e.s.minItems}.`;
+      case 'maxItems': return `Choose at most ${e.s.maxItems}.`;
+      case 'enum': return 'Choose one of the options.';
+      case 'const': return g === 'materials.N.audience' ? 'This kind of file must be instructor only.' : 'Tick to confirm before submitting.';
+      case 'type': return e.want === 'integer' ? 'Enter a whole number.' : e.want === 'number' ? 'Enter a number.' : 'Not valid.';
+      case 'minimum': return `Must be at least ${e.s.minimum}.`;
+      case 'pattern': return PATTERN_MSG[key] || 'Not in the expected format.';
+      case 'format': return e.s.format === 'email' ? "That doesn't look like an email address." : "That doesn't look like a web address.";
+      case 'uniqueItems': return 'Listed twice.';
+      case 'anyOf': return 'Enter a file name or a link.';
+      default: return 'Not valid.';
+    }
+  }
+  const alias = (p) => p.replace(/^(materials\.\d+)\.(file|url)$/, '$1.loc');
+
+  function validate() {
+    const m = toManifest(st);
+    const raw = []; check(SCHEMA, m, '', raw);
+    const errs = raw.map((e) => ({ path: alias(e.path), msg: message(e) }));
+    const warns = [];
+    const isInt = (v) => /^\d+$/.test(String(v).trim());
+    const range = (r, path) => { if (isInt(r.min) && isInt(r.max) && +r.min > +r.max) errs.push({ path: path + '.max', msg: 'Must be at least the minimum.' }); };
+    range(st.duration.in_class_minutes, 'duration.in_class_minutes');
+    if (!st.class_size.nolimit) range(st.class_size, 'class_size');
+    range(st.group_size, 'group_size');
+    if (st.materials.length && !st.materials.some((r) => r.role === 'instructor-guide')) errs.push({ path: 'materials', msg: 'Include an instructor guide, and set its type to “Instructor guide”.' });
+    if (!st.rights.owns) errs.push({ path: 'rights.author_owns_or_has_permission', msg: 'Tick to confirm before submitting.' });
+    if (!st.author_confirmed) errs.push({ path: 'author_confirmed', msg: "Tick when you've checked every section." });
+    const w = words(st.summary);
+    if (w && (w < 60 || w > 180) && !errs.some((e) => e.path === 'summary')) warns.push({ path: 'summary', msg: `Aim for 60 to 180 words (now ${w}).` });
+    st.learning_objectives.forEach((o, i) => { if (WEAK_VERBS.test(o.trim())) warns.push({ path: 'learning_objectives.' + i, msg: 'Start with a verb you can assess, such as explain, apply, compare or evaluate.' }); });
+    if (st.technology.includes('none') && st.technology.length > 1) warns.push({ path: 'technology', msg: '“None” is selected along with other technology.' });
+    st.rights.third_party_materials.forEach((t, i) => { if (t.status === 'needs-review') warns.push({ path: `rights.third_party_materials.${i}.status`, msg: 'Editors will need to clear this before publication.' }); });
+    st.materials.forEach((r, i) => { const f = attached.get(r.loc.trim()); if (f && f.size > BIG_FILE) warns.push({ path: `materials.${i}.loc`, msg: 'Over 100 MB: host it elsewhere and enter a link instead.' }); });
+    result = { errs, warns, manifest: m };
+  }
+
+  // ---------- rendering ----------
+  function wrap(path, labelText, inner, opts = {}) {
+    const optional = opts.optional ? ' <span class="opt">(optional)</span>' : '';
+    const head = opts.forId ? `<label for="${opts.forId}">${esc(labelText)}${optional}</label>` : labelText ? `<div class="lbl">${esc(labelText)}${optional}</div>` : '';
+    return `<div class="field" id="w-${pid(path)}" data-path="${path}" data-label="${esc(opts.title || labelText)}">${head}${inner}`
+      + (opts.hint ? `<div class="hint">${opts.hint}</div>` : '') + (opts.after || '')
+      + `<div class="ai-note"></div><div class="err"></div><div class="warn"></div></div>`;
+  }
+  function text(path, labelText, opts = {}) {
+    const id = 'f-' + pid(opts.bind || path), v = get(opts.bind || path);
+    const input = opts.rows
+      ? `<textarea id="${id}" data-bind="${opts.bind || path}" rows="${opts.rows}"${opts.ph ? ` placeholder="${esc(opts.ph)}"` : ''}>${esc(v)}</textarea>`
+      : `<input type="${opts.type || 'text'}" id="${id}" data-bind="${opts.bind || path}" value="${esc(v)}"${opts.num ? ' inputmode="numeric"' : ''}${opts.ph ? ` placeholder="${esc(opts.ph)}"` : ''}>`;
+    return wrap(path, labelText, input, Object.assign({ forId: id }, opts));
+  }
+  function chips(path, labelText, values, opts = {}) {
+    const sel = get(path), max = opts.max, full = max && sel.length >= max;
+    const btns = values.map((v) => {
+      const i = sel.indexOf(v), on = i >= 0;
+      const ord = opts.ordered && on && max > 1 ? `<span class="ord">${i === 0 ? 'Primary' : i + 1}</span>` : '';
+      const tip = opts.hints && opts.hints[v] ? ` title="${esc(opts.hints[v])}"` : '';
+      return `<button type="button" class="chip${!on && full ? ' full' : ''}" aria-pressed="${on}" data-action="chip" data-path="${path}" data-value="${v}"${tip}>${esc(label(v))}${ord}</button>`;
+    }).join('');
+    return wrap(path, labelText, `<div class="chips">${btns}</div>`, opts);
+  }
+  function select(path, values, opts = {}) {
+    const v = get(opts.bind || path), id = 'f-' + pid(opts.bind || path);
+    const options = (opts.empty ? `<option value="">${esc(opts.empty)}</option>` : '') + values.map((x) => `<option value="${x}"${x === v ? ' selected' : ''}>${esc(label(x))}</option>`).join('');
+    return `<select id="${id}" data-bind="${opts.bind || path}"${opts.disabled ? ' disabled' : ''}>${options}</select>`;
+  }
+  function checkbox(bind, labelHtml) {
+    return `<label class="check"><input type="checkbox" data-bind="${bind}" data-kind="bool"${get(bind) ? ' checked' : ''}> <span>${labelHtml}</span></label>`;
+  }
+  function tags(path, labelText, opts) {
+    const id = 'f-' + pid(path) + '-new';
+    const inner = `<div class="tags" id="tags-${pid(path)}">${tagList(path)}</div><div class="tag-entry"><input type="text" id="${id}" data-tag="${path}" placeholder="${esc(opts.ph)}" aria-label="${esc(labelText)}: add"><button type="button" class="secondary" data-action="tag-add" data-path="${path}">Add</button></div>`;
+    return wrap(path, labelText, inner, opts);
+  }
+  const tagList = (path) => get(path).map((t, i) => `<span class="tag">${esc(t)}<button type="button" aria-label="Remove ${esc(t)}" data-action="tag-remove" data-path="${path}" data-index="${i}">×</button></span>`).join('');
+  const rangeInputs = (path, minLabel, maxLabel) => `<div class="grid">`
+    + text(path + '.min', minLabel, { num: true, title: minLabel }) + text(path + '.max', maxLabel, { num: true, title: maxLabel }) + `</div>`;
+
+  const RENDER = {
+    basics() {
+      return `<h3>Basics</h3>`
+        + text('title', 'Title', { hint: 'Descriptive, not just a product name. Good: “Negotiating with an Algorithmic Supplier”.' })
+        + text('summary', 'Summary', { rows: 6, after: '<div class="meter" id="summary-meter"></div>', hint: 'For an instructor deciding whether to use it: what students do, what they learn, what it takes to run. Shown publicly, so nothing confidential.' })
+        + text('description', 'Longer description', { rows: 4, optional: true, hint: 'For members: structure, variations, adaptations.' })
+        + `<details class="small" style="margin-top:12px"><summary>Web address and version</summary>`
+        + text('slug', 'Web address', { hint: 'Filled in from the title. Lowercase words joined by hyphens; it can\'t change after publication.' })
+        + `<div class="grid">` + text('version', 'Version', { hint: '1.0 for a first submission.' }) + text('version_notes', 'What changed', { optional: true }) + `</div></details>`;
+    },
+    authors() {
+      const rows = st.authors.map((a, i) => `<div class="row" id="w-authors-${i}" data-path="authors.${i}" data-label="Author ${i + 1}">`
+        + `<div class="row-head"><span>Author ${i + 1}</span>${st.authors.length > 1 ? `<button type="button" class="icon" data-action="remove" data-path="authors" data-index="${i}">Remove</button>` : ''}</div>`
+        + `<div class="grid">` + text(`authors.${i}.name`, 'Name', { title: `Author ${i + 1} name` }) + text(`authors.${i}.affiliation`, 'Institution', { optional: true, title: `Author ${i + 1} institution` }) + `</div>`
+        + `<div class="grid">` + text(`authors.${i}.email`, 'Email', { type: 'email', optional: true, title: `Author ${i + 1} email` }) + text(`authors.${i}.orcid`, 'ORCID iD', { optional: true, ph: '0000-0000-0000-0000', title: `Author ${i + 1} ORCID` }) + `</div>`
+        + `<div class="field"><label class="check"><input type="radio" name="corresponding" data-action="corresponding" data-index="${i}"${a.corresponding ? ' checked' : ''}> <span>Contact author</span></label></div>`
+        + `<div class="err"></div></div>`).join('');
+      return `<h3>Authors</h3><p class="small muted">In citation order. Emails go to the editors only and are never displayed.</p>`
+        + wrap('authors', '', rows) + `<div class="actions"><button type="button" class="secondary" data-action="add" data-path="authors">Add an author</button></div>`;
+    },
+    classify() {
+      const objs = st.learning_objectives.map((o, i) => `<div class="field" id="w-learning_objectives-${i}" data-path="learning_objectives.${i}" data-label="Objective ${i + 1}" style="margin-top:8px">`
+        + `<div class="obj"><textarea rows="2" id="f-learning_objectives-${i}" data-bind="learning_objectives.${i}" aria-label="Objective ${i + 1}" placeholder="e.g. Explain how anchoring shapes a negotiated outcome">${esc(o)}</textarea>`
+        + `<button type="button" class="icon" data-action="remove" data-path="learning_objectives" data-index="${i}" aria-label="Remove objective ${i + 1}">Remove</button></div>`
+        + `<div class="ai-note"></div><div class="err"></div><div class="warn"></div></div>`).join('');
+      return `<h3>What it teaches</h3>`
+        + chips('exercise_types', 'Type of exercise', ENUM.exercise_types, { max: 3, ordered: true, hints: HINTS.exercise_types, hint: 'Up to 3. The first one you pick is the primary type. Hover over an option for a definition.' })
+        + chips('disciplines', 'Disciplines', ENUM.disciplines, { max: 3, ordered: true, hint: 'Up to 3, where it\'s taught. The first one you pick is the primary discipline.' })
+        + tags('topics', 'Topics', { ph: 'Type a topic and press Enter', hint: '3 to 12 concepts an instructor would search for, e.g. “anchoring”, “bullwhip effect”.' })
+        + wrap('learning_objectives', 'Learning objectives', `<div class="hint" style="margin-top:0">Students will be able to…</div>${objs}<div class="actions"><button type="button" class="secondary" data-action="add" data-path="learning_objectives">Add an objective</button></div>`)
+        + tags('courses', 'Typical courses', { optional: true, ph: 'e.g. Principles of Marketing' })
+        + chips('skills', 'Skills students practice', ENUM.skills, { max: 5, optional: true, hint: 'Up to 5. Used for AACSB assurance-of-learning reporting.' });
+    },
+    logistics() {
+      const ai = st.ai_involvement;
+      return `<h3>Running it</h3>`
+        + chips('levels', 'Levels', ENUM.levels, { hint: 'Levels it was designed for or used with.' })
+        + chips('delivery_modes', 'Delivery', ENUM.delivery_modes, { hint: 'Only modes the materials support as written.' })
+        + wrap('duration', 'Class time', `<div class="grid">`
+          + text('duration.in_class_minutes.min', 'Minutes, at least', { num: true, title: 'Class time minimum' })
+          + text('duration.in_class_minutes.max', 'Minutes, at most', { num: true, title: 'Class time maximum' })
+          + text('duration.sessions', 'Class sessions', { num: true })
+          + text('duration.out_of_class_hours', 'Student hours outside class', { optional: true }) + `</div>`, { hint: 'Total class time across all sessions, including the debrief. Use 0 if it\'s done entirely outside class.' })
+        + wrap('class_size', 'Class size', `<div class="grid">` + text('class_size.min', 'Students, at least', { num: true, title: 'Class size minimum' })
+          + (st.class_size.nolimit ? '' : text('class_size.max', 'Students, at most', { num: true, title: 'Class size maximum' })) + `</div>`
+          + `<div style="margin-top:8px">${checkbox('class_size.nolimit', 'No upper limit')}</div>`, { hint: 'Sizes it has worked with.' })
+        + wrap('group_size', 'Team size', rangeInputs('group_size', 'Per team, at least', 'Per team, at most'), { optional: true, hint: '1 and 1 for individual work.' })
+        + `<div class="grid">` + text('prep_time_minutes', 'Instructor prep (minutes)', { num: true, optional: true, hint: 'The first time.' })
+        + wrap('cost_to_students', 'Cost to students', select('cost_to_students', ENUM.cost_to_students, { empty: 'Not stated' }), { optional: true, forId: 'f-cost_to_students', hint: 'US dollars per student.' }) + `</div>`
+        + chips('technology', 'Technology needed', ENUM.technology)
+        + text('technology_notes', 'Technology notes', { optional: true, hint: 'Required for specialized software: what it is and how students get it.' })
+        + wrap('ai_involvement', 'AI', `<div>${checkbox('ai_involvement.topic_is_ai', 'The exercise teaches about AI')}</div>`
+          + `<div class="grid" style="margin-top:4px">` + wrap('ai_involvement.students_use_ai', 'Students use AI tools', select('ai_involvement.students_use_ai', ENUM.students_use_ai), { forId: 'f-ai_involvement-students_use_ai' })
+          + text('ai_involvement.notes', 'AI notes', { optional: true }) + `</div>`, { optional: true });
+    },
+    materials() {
+      const rows = st.materials.map((r, i) => {
+        const locked = LOCKED_ROLES.includes(r.role);
+        return `<div class="row" id="w-materials-${i}" data-path="materials.${i}" data-label="File ${i + 1}">`
+          + `<div class="row-head"><span>File ${i + 1} <span class="file-state" data-file-state="${i}"></span></span><button type="button" class="icon" data-action="remove" data-path="materials" data-index="${i}">Remove</button></div>`
+          + `<div class="grid">` + text(`materials.${i}.loc`, 'File name or link', { bind: `materials.${i}.loc`, title: `File ${i + 1} name` })
+          + text(`materials.${i}.title`, 'Title', { ph: 'e.g. Instructor guide', title: `File ${i + 1} title` }) + `</div>`
+          + `<div class="grid">` + wrap(`materials.${i}.role`, 'What it is', select(`materials.${i}.role`, ENUM.role, { empty: 'Choose…' }), { forId: `f-materials-${i}-role`, title: `File ${i + 1} type` })
+          + wrap(`materials.${i}.audience`, 'Who may see it', select(`materials.${i}.audience`, ENUM.audience, { empty: 'Choose…', disabled: locked }), { forId: `f-materials-${i}-audience`, title: `File ${i + 1} audience`, hint: locked ? 'Always instructor only for this type of file.' : '' }) + `</div>`
+          + text(`materials.${i}.notes`, 'Notes', { optional: true, title: `File ${i + 1} notes` })
+          + `<div class="err"></div><div class="warn"></div></div>`;
+      }).join('');
+      return `<h3>Files</h3><p class="small muted">Every file in the exercise, plus links to anything hosted elsewhere. Keep answer keys in their own instructor-only file.</p>`
+        + wrap('materials', '', rows)
+        + `<div class="actions"><label class="button secondary">Attach files<input type="file" id="attach" multiple hidden></label>`
+        + `<button type="button" class="secondary" data-action="add" data-path="materials">Add a row</button></div>`
+        + `<p class="hint">Attaching matches your files to the list by name, and adds a row for any file not listed yet.</p>`;
+    },
+    evidence() {
+      const pubs = st.prior_publications.map((p, i) => `<div class="row" id="w-prior_publications-${i}" data-path="prior_publications.${i}" data-label="Publication ${i + 1}">`
+        + `<div class="row-head"><span>Publication ${i + 1}</span><button type="button" class="icon" data-action="remove" data-path="prior_publications" data-index="${i}">Remove</button></div>`
+        + text(`prior_publications.${i}.citation`, 'Citation', { rows: 2, title: `Publication ${i + 1} citation` })
+        + `<div class="grid">` + text(`prior_publications.${i}.doi`, 'DOI', { optional: true, ph: '10.1234/abcd', title: `Publication ${i + 1} DOI` }) + text(`prior_publications.${i}.url`, 'Link', { optional: true, title: `Publication ${i + 1} link` }) + `</div>`
+        + `<div class="err"></div></div>`).join('');
+      return `<h3>Testing and evidence</h3><p class="small muted">All optional, but editors and instructors look for it.</p>`
+        + `<div class="grid">` + text('classroom_testing.times_used', 'Times used with students', { num: true, optional: true, hint: '0 is fine.' }) + `</div>`
+        + text('classroom_testing.contexts', 'Where you used it', { rows: 2, optional: true, hint: 'Courses, levels and class sizes.' })
+        + text('evidence_of_effectiveness', 'Evidence it works', { rows: 3, optional: true, hint: 'Student feedback, assessment results or research, summarized. No raw student comments.' })
+        + wrap('prior_publications', 'Earlier publications', pubs + `<div class="actions"><button type="button" class="secondary" data-action="add" data-path="prior_publications">Add a publication</button></div>`, { optional: true, hint: 'For example ABSEL Developments proceedings.' });
+    },
+    rights() {
+      const third = st.rights.third_party_materials.map((t, i) => `<div class="row" id="w-rights-third_party_materials-${i}" data-path="rights.third_party_materials.${i}" data-label="Third-party item ${i + 1}">`
+        + `<div class="row-head"><span>Item ${i + 1}</span><button type="button" class="icon" data-action="remove" data-path="rights.third_party_materials" data-index="${i}">Remove</button></div>`
+        + `<div class="grid">` + text(`rights.third_party_materials.${i}.description`, 'What it is', { ph: 'e.g. HBS case 9-123-456', title: `Third-party item ${i + 1}` })
+        + wrap(`rights.third_party_materials.${i}.status`, 'Permission', select(`rights.third_party_materials.${i}.status`, ENUM.status, { empty: 'Choose…' }), { forId: `f-rights-third_party_materials-${i}-status`, title: `Third-party item ${i + 1} permission` }) + `</div>`
+        + `<div class="err"></div></div>`).join('');
+      const lic = ENUM.license.map((v) => `<label><input type="radio" name="license" data-bind="license" value="${v}"${st.license === v ? ' checked' : ''}><span>${esc(label(v))}<small>${esc(HINTS.license[v] || '')}</small></span></label>`).join('');
+      return `<h3>Rights and license</h3>`
+        + wrap('rights.author_owns_or_has_permission', '', checkbox('rights.owns', 'I (and my co-authors) created these materials, or have permission to share them.'), { title: 'Ownership' })
+        + wrap('rights.third_party_materials', 'Material created by someone else', third
+          + `<div class="actions"><button type="button" class="secondary" data-action="add" data-path="rights.third_party_materials">Add an item</button></div>`,
+          { hint: 'Published cases, publisher slides, images, articles, software. Leave empty if there are none.' })
+        + wrap('rights.contains_identifiable_student_information', '', checkbox('rights.no_student_info', 'I have removed all student names, grades and identifiable student work from every file.'), { title: 'Student information' })
+        + wrap('license', 'License', `<div class="radio-cards">${lic}</div>`, { hint: 'You keep the copyright. This is what ABSEL members may do with the materials.' });
+    },
+    finish() {
+      return `<h3>Finish</h3><div id="finish-status"></div>`
+        + wrap('author_confirmed', '', checkbox('author_confirmed', "I've checked every section, and the information is accurate."), { title: 'Final check' })
+        + (st.generated_with ? `<p class="hint">Drafted with: ${esc(st.generated_with)}</p>` : '')
+        + `<div class="actions"><button type="button" data-action="download">Download manifest.json</button>`
+        + `<button type="button" class="secondary" data-action="copy-json">Copy as text</button>`
+        + `<button type="button" class="link" data-action="reset" style="margin-left:auto">Start over</button></div>`
+        + `<p class="hint">Save the file to come back later: open it with “Open a saved manifest.json”. This preview doesn't send anything to ABSEL; on absel.org, a Submit button will send it with your files to the editors.</p>`;
+    },
+  };
+
+  function renderSection(id) {
+    const el = document.getElementById('sec-' + id);
+    el.innerHTML = RENDER[id]();
+    if (id === 'materials') el.querySelector('#attach').addEventListener('change', onAttach);
+  }
+  function renderAll() {
+    SECTIONS.forEach(([id]) => renderSection(id));
+    $('#editor').hidden = false; $('#nav').hidden = false; $('#wrap').classList.remove('no-nav');
+    $('#ai-review').hidden = !review; $('#ai-review-text').textContent = review;
+    refresh();
+  }
+
+  function refresh() {
+    validate();
+    const show = (path) => showAll || touched.has(path);
+    document.querySelectorAll('#editor [data-path]').forEach((w) => {
+      ['err', 'warn', 'ai-note'].forEach((c) => { const box = w.querySelector(':scope > .' + c); if (box) box.textContent = ''; });
+      w.classList.remove('show-err');
+    });
+    const target = (path) => {
+      for (let p = path; p; p = p.includes('.') ? p.slice(0, p.lastIndexOf('.')) : '') {
+        const w = document.getElementById('w-' + pid(p));
+        if (w) return w;
+      }
+      return null;
+    };
+    const put = (list, cls) => list.forEach((e) => {
+      const w = target(e.path); if (!w) return;
+      const box = w.querySelector(':scope > .' + cls);
+      if (!box || box.textContent || (cls === 'err' && !show(w.dataset.path))) return;
+      box.textContent = e.msg;
+      if (cls === 'err') w.classList.add('show-err');
+    });
+    put(result.errs, 'err'); put(result.warns, 'warn');
+    for (const [path, list] of Object.entries(issues)) {
+      const w = target(path); const box = w && w.querySelector(':scope > .ai-note');
+      if (box) box.innerHTML = esc(list.join(' ')) + ` <button type="button" class="link" data-action="dismiss" data-path="${path}">OK</button>`;
+    }
+    document.querySelectorAll('[data-file-state]').forEach((el) => {
+      const loc = (st.materials[+el.dataset.fileState] || { loc: '' }).loc.trim(), f = attached.get(loc);
+      el.textContent = /^https?:\/\//i.test(loc) ? 'Link' : f ? `✓ Attached (${fmtSize(f.size)})` : loc ? 'Not attached yet' : '';
+      el.classList.toggle('ok', !!f);
+    });
+    const meter = $('#summary-meter');
+    if (meter) { const n = words(st.summary); meter.textContent = `${n} words (aim for 60 to 180)`; meter.classList.toggle('bad', n > 0 && (n < 60 || n > 180)); }
+    renderNav(); renderFinish(); save();
+  }
+  const sectionOf = (path) => (SECTIONS.find(([, , keys]) => keys.includes(path.split('.')[0])) || SECTIONS[SECTIONS.length - 1])[0];
+  function renderNav() {
+    const counts = {};
+    result.errs.forEach((e) => { const s = sectionOf(e.path); counts[s] = (counts[s] || 0) + 1; });
+    $('#nav').innerHTML = '<ol>' + SECTIONS.map(([id, title]) => `<li><a href="#sec-${id}"><span>${title}</span>`
+      + (counts[id] ? `<span class="badge todo">${counts[id]} to do</span>` : '<span class="badge ok">✓</span>') + '</a></li>').join('') + '</ol>';
+  }
+  function labelFor(path) {
+    for (let p = path; p; p = p.includes('.') ? p.slice(0, p.lastIndexOf('.')) : '') {
+      const w = document.getElementById('w-' + pid(p));
+      if (w && w.dataset.label) return w.dataset.label;
+    }
+    return path;
+  }
+  function renderFinish() {
+    const box = $('#finish-status'); if (!box) return;
+    const errs = result.errs.filter((e) => e.path !== 'author_confirmed');
+    if (!errs.length) {
+      box.innerHTML = `<div class="msg ok">Everything required is filled in.${result.warns.length ? ` There ${result.warns.length === 1 ? 'is 1 suggestion' : `are ${result.warns.length} suggestions`} in amber above.` : ''}</div>`;
+      return;
+    }
+    const items = errs.slice(0, 25).map((e) => `<li><a href="#" data-action="jump" data-path="${e.path}">${esc(SECTIONS.find(([id]) => id === sectionOf(e.path))[1])} › ${esc(labelFor(e.path))}</a>: ${esc(e.msg)}</li>`).join('');
+    box.innerHTML = `<div class="msg bad"><strong>${errs.length} ${errs.length === 1 ? 'thing' : 'things'} to finish before submitting:</strong><ul class="problems">${items}</ul>${errs.length > 25 ? '<p>…and more.</p>' : ''}</div>`;
+  }
+
+  // ---------- saving the draft in this browser ----------
+  let saveTimer = null;
+  function save() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      try { localStorage.setItem(STORE_KEY, JSON.stringify({ st, issues, review, slugTouched, showAll, savedAt: Date.now() })); } catch (e) { /* storage unavailable: the draft just isn't kept */ }
+    }, 400);
+  }
+  function restore() {
+    let d = null;
+    try { d = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); } catch (e) { d = null; }
+    if (!d || !d.st) return false;
+    st = Object.assign(blank(), d.st); issues = d.issues || {}; review = d.review || '';
+    slugTouched = !!d.slugTouched; showAll = !!d.showAll;
+    renderAll();
+    const when = new Date(d.savedAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+    $('#import-msg').innerHTML = `<div class="msg info">Welcome back. Your draft from ${esc(when)} is below.${st.materials.length ? ' Attach your files again if you want to check them against the list.' : ''}</div>`;
+    return true;
+  }
+
+  // ---------- loading a draft ----------
+  function hasWork() { return st && (st.title || st.summary || st.topics.length); }
+  function load(raw, rest, source) {
+    const r = fromManifest(raw);
+    st = r.state; issues = r.notes; review = rest || ''; slugTouched = r.slugGiven; showAll = true; touched = new Set();
+    renderAll();
+    const n = Object.keys(issues).length;
+    const parts = [`<strong>Draft loaded${source ? ' from ' + esc(source) : ''}.</strong> Check each section below; anything that still needs you is marked in red.`];
+    if (n) parts.push(`${n} ${n === 1 ? 'value' : 'values'} from your assistant needed adjusting; look for the yellow notes.`);
+    if (r.ignored.length) parts.push(`Ignored fields this form doesn't use: ${esc(r.ignored.join(', '))}.`);
+    $('#import-msg').innerHTML = `<div class="msg ok">${parts.join(' ')}</div>`;
+    document.getElementById('sec-basics').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function importText(textIn, source) {
+    const textValue = textIn.trim();
+    if (!textValue) { $('#import-msg').innerHTML = '<div class="msg bad">Paste your assistant\'s reply first.</div>'; return; }
+    const found = extractDraft(textValue);
+    if (!found) {
+      $('#import-msg').innerHTML = `<div class="msg bad"><strong>No draft found in that text.</strong> Make sure you copied the assistant's final reply, including the part that starts with <code>{</code> and ends with <code>}</code>. Or ask your assistant:<br>“Please give me the manifest again as valid JSON in one code block.” <button type="button" class="link" data-action="copy-fix">Copy this request</button></div>`;
+      return;
+    }
+    if (hasWork() && !confirm('Replace the draft you are editing with this one?')) return;
+    load(found.data, found.rest, source);
+  }
+
+  // ---------- events ----------
+  function copy(textValue, statusEl) {
+    const done = () => { if (statusEl) { statusEl.textContent = 'Copied.'; setTimeout(() => { statusEl.textContent = ''; }, 2500); } };
+    const fallback = () => {
+      const ta = document.createElement('textarea'); ta.value = textValue; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); done(); } catch (e) { if (statusEl) statusEl.textContent = 'Copy failed: select the text and copy it yourself.'; }
+      ta.remove();
+    };
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(textValue).then(done, fallback); else fallback();
+  }
+  function addTag(path, value) {
+    const add = String(value).split(/[,;\n]/).map((t) => (path === 'topics' ? normTopic(t) : t.trim())).filter(Boolean);
+    const list = get(path); let changed = false;
+    add.forEach((t) => { if (!list.includes(t)) { list.push(t); changed = true; } });
+    touched.add(path); delete issues[path];
+    document.getElementById('tags-' + pid(path)).innerHTML = tagList(path);
+    refresh();
+    return changed;
+  }
+  function onAttach(ev) {
+    for (const f of ev.target.files) {
+      attached.set(f.name, f);
+      if (!st.materials.some((r) => r.loc.trim() === f.name)) {
+        const role = guessRole(f.name);
+        st.materials.push({ loc: f.name, title: titleFromFile(f.name), role, audience: LOCKED_ROLES.includes(role) || ['debrief-guide', 'other', 'slides', 'data-file', 'rubric', 'assessment', 'video'].includes(role) ? 'instructor-only' : 'student-facing', notes: '' });
+      }
+    }
+    touched.add('materials');
+    renderSection('materials'); refresh();
+  }
+  function guessRole(name) {
+    const n = name.toLowerCase();
+    if (/answer|solution|(^|[-_ ])key([-_ .]|$)/.test(n)) return 'answer-key';
+    if (/teaching[-_ ]?notes?/.test(n)) return 'teaching-notes';
+    if (/debrief/.test(n)) return 'debrief-guide';
+    if (/facilitator|instructor|guide/.test(n)) return 'instructor-guide';
+    if (/rubric/.test(n)) return 'rubric';
+    if (/role|brief/.test(n)) return 'role-brief';
+    if (/\.(pptx?|key)$/.test(n)) return 'slides';
+    if (/\.(xlsx?|csv)$/.test(n)) return 'data-file';
+    if (/\.html?$/.test(n)) return 'simulation';
+    if (/\.(mp4|mov|webm)$/.test(n)) return 'video';
+    if (/handout|instruction|student/.test(n)) return 'student-instructions';
+    if (/case/.test(n)) return 'case-text';
+    return 'other';
+  }
+  const titleFromFile = (name) => { const t = name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').trim(); return t.charAt(0).toUpperCase() + t.slice(1); };
+  const ROW_BLANK = {
+    authors: () => ({ name: '', affiliation: '', email: '', orcid: '', corresponding: false }),
+    learning_objectives: () => '',
+    materials: () => ({ loc: '', title: '', role: '', audience: '', notes: '' }),
+    prior_publications: () => ({ citation: '', doi: '', url: '' }),
+    'rights.third_party_materials': () => ({ description: '', status: '' }),
+  };
+
+  document.addEventListener('input', (ev) => {
+    const el = ev.target, path = el.dataset && el.dataset.bind;
+    if (!path || !st) return;
+    const value = el.dataset.kind === 'bool' ? el.checked : el.value;
+    set(path, value);
+    if (issues[path]) delete issues[path];
+    if (path === 'title' && !slugTouched) { st.slug = slugify(value); const s = $('#f-slug'); if (s) s.value = st.slug; }
+    if (path === 'slug') slugTouched = true;
+    if (/^materials\.\d+\.role$/.test(path) && LOCKED_ROLES.includes(value)) set(path.replace(/role$/, 'audience'), 'instructor-only');
+    if (/^materials\.\d+\.role$/.test(path)) { renderSection('materials'); const again = document.getElementById(el.id); if (again) again.focus(); }
+    if (path === 'class_size.nolimit') { touched.add('class_size'); renderSection('logistics'); }
+    const w = el.closest('[data-path]');
+    if (w && (el.type === 'checkbox' || el.type === 'radio' || el.tagName === 'SELECT')) touched.add(w.dataset.path);
+    refresh();
+  });
+  document.addEventListener('focusout', (ev) => {
+    const w = ev.target.closest && ev.target.closest('#editor [data-path]');
+    if (ev.target.dataset && ev.target.dataset.tag && ev.target.value.trim()) { const v = ev.target.value; ev.target.value = ''; addTag(ev.target.dataset.tag, v); return; }
+    if (w && ev.target.dataset && ev.target.dataset.bind) {
+      touched.add(w.dataset.path);
+      refresh();
+    }
+  });
+  document.addEventListener('keydown', (ev) => {
+    const el = ev.target;
+    if (el.dataset && el.dataset.tag && (ev.key === 'Enter' || ev.key === ',')) {
+      ev.preventDefault();
+      if (el.value.trim()) { const v = el.value; el.value = ''; addTag(el.dataset.tag, v); el.focus(); }
+    }
+  });
+  document.addEventListener('click', (ev) => {
+    const el = ev.target.closest('[data-action]'); if (!el) return;
+    const a = el.dataset.action, path = el.dataset.path, i = +el.dataset.index;
+    if (a === 'copy-prompt') return copy(PROMPT, $('#copy-status'));
+    if (a === 'copy-fix') return copy('Please give me the manifest again as valid JSON in one code block.', null);
+    if (a === 'import') return importText($('#paste').value, "your assistant's reply");
+    if (a === 'blank') {
+      if (hasWork() && !confirm('Start a blank form? The draft you are editing will be replaced.')) return;
+      st = blank(); issues = {}; review = ''; slugTouched = false; showAll = false; touched = new Set();
+      renderAll(); $('#import-msg').innerHTML = '';
+      return document.getElementById('sec-basics').scrollIntoView({ behavior: 'smooth' });
+    }
+    if (!st) return;
+    if (a === 'chip') {
+      const list = get(path), v = el.dataset.value, k = list.indexOf(v), max = (P[path].maxItems || Infinity);
+      if (k >= 0) list.splice(k, 1); else if (list.length < max) list.push(v); else return;
+      touched.add(path); delete issues[path];
+      const sec = sectionOf(path); renderSection(sec); refresh();
+      const again = document.querySelector(`[data-action="chip"][data-path="${path}"][data-value="${v}"]`); if (again) again.focus();
+      return;
+    }
+    if (a === 'tag-add') { const input = document.getElementById('f-' + pid(path) + '-new'); const v = input.value; input.value = ''; addTag(path, v); return input.focus(); }
+    if (a === 'tag-remove') {
+      get(path).splice(i, 1); touched.add(path);
+      document.getElementById('tags-' + pid(path)).innerHTML = tagList(path);
+      const input = document.getElementById('f-' + pid(path) + '-new'); if (input) input.focus();
+      return refresh();
+    }
+    if (a === 'add') {
+      get(path).push(ROW_BLANK[path]()); renderSection(sectionOf(path)); refresh();
+      const n = get(path).length - 1;
+      const first = document.querySelector(`#w-${pid(path)}-${n} input, #w-${pid(path)}-${n} textarea`); if (first) first.focus();
+      return;
+    }
+    if (a === 'remove') {
+      const list = get(path); list.splice(i, 1);
+      if (path === 'authors' && list.length && !list.some((x) => x.corresponding)) list[0].corresponding = true;
+      for (const k of Object.keys(issues)) if (k.startsWith(path + '.')) delete issues[k];
+      touched.add(path); renderSection(sectionOf(path)); return refresh();
+    }
+    if (a === 'dismiss') { delete issues[path]; return refresh(); }
+    if (a === 'corresponding') { st.authors.forEach((x, j) => { x.corresponding = j === i; }); return refresh(); }
+    if (a === 'jump') {
+      ev.preventDefault();
+      showAll = true; refresh();
+      let w = null;
+      for (let p = path; p && !w; p = p.includes('.') ? p.slice(0, p.lastIndexOf('.')) : '') w = document.getElementById('w-' + pid(p));
+      if (w) { w.scrollIntoView({ behavior: 'smooth', block: 'center' }); const f = w.querySelector('input, textarea, select, button'); if (f) f.focus({ preventScroll: true }); }
+      return;
+    }
+    if (a === 'download' || a === 'copy-json') {
+      showAll = true; refresh();
+      const json = JSON.stringify(result.manifest, null, 2) + '\n';
+      if (a === 'copy-json') return copy(json, null);
+      const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+      const link = document.createElement('a'); link.href = url; link.download = 'manifest.json';
+      document.body.appendChild(link); link.click(); link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      return;
+    }
+    if (a === 'reset') {
+      if (!confirm('Clear this form and start over? Download the manifest first if you want to keep it.')) return;
+      try { localStorage.removeItem(STORE_KEY); } catch (e) { /* nothing stored */ }
+      location.reload();
+    }
+  });
+  $('#manifest-file').addEventListener('change', (ev) => {
+    const f = ev.target.files[0]; if (!f) return;
+    f.text().then((t) => importText(t, f.name)); ev.target.value = '';
+  });
+
+  $('#prompt-view').textContent = PROMPT;
+  restore();
+  window.__submit = { get state() { return st; }, get result() { return result; }, extractDraft, fromManifest, toManifest };
+})();
+</script>
+</body>
+</html>

@@ -2,8 +2,9 @@
 
 Validates every activities/<slug>/manifest.json against schema/exercise.schema.json,
 checks each package against its manifest, and checks that the indexing rules and the
-author prompt list every allowed value in the schema and that the prompt's manifest
-template has the schema's fields.
+author prompt list every allowed value in the schema, that the prompt's manifest
+template has the schema's fields, and that the submission form's copies of the schema
+and prompt are current.
 
 Usage: py tools/check_library.py          (needs: pip install jsonschema)
 Exit code 1 if anything fails. Warnings don't fail the check.
@@ -14,6 +15,8 @@ import sys
 from pathlib import Path
 
 from jsonschema import Draft202012Validator, FormatChecker
+
+import build_form
 
 ROOT = Path(__file__).resolve().parent.parent
 SCHEMA = ROOT / "schema" / "exercise.schema.json"
@@ -62,6 +65,21 @@ def check_prompt_template(schema):
         errors.append(f"{prompt.relative_to(ROOT)}: template is missing field '{field}'")
     for field in sorted(set(template) - set(schema["properties"])):
         errors.append(f"{prompt.relative_to(ROOT)}: template has field '{field}', which isn't in the schema")
+
+
+def check_form():
+    """The submission form's copies of the schema and prompt must match the originals."""
+    current = build_form.embedded(build_form.FORM.read_text(encoding="utf-8"))
+    expected = build_form.sources()
+    form = build_form.FORM.relative_to(ROOT)
+    try:
+        schema_ok = current["schema"] is not None and json.loads(current["schema"]) == json.loads(expected["schema"])
+    except json.JSONDecodeError:
+        schema_ok = False
+    if not schema_ok:
+        errors.append(f"{form}: its copy of the schema is out of date; run py tools/build_form.py")
+    if current["prompt"] != expected["prompt"]:
+        errors.append(f"{form}: its copy of the author prompt is out of date; run py tools/build_form.py")
 
 
 def check_package(folder, manifest):
@@ -117,6 +135,7 @@ def main():
     validator = Draft202012Validator(schema, format_checker=FormatChecker())
     check_docs(schema)
     check_prompt_template(schema)
+    check_form()
 
     folders = [f for f in sorted(ACTIVITIES.iterdir()) if f.is_dir() and f.name[0] not in "._"]
     for folder in folders:
