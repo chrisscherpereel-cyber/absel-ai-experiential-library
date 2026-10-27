@@ -56,9 +56,9 @@ def check_prompt_template(schema):
     prompt = DOCS[1]
     text = prompt.read_text(encoding="utf-8").split("MANIFEST FORMAT", 1)[-1]
     try:
-        block = text[text.index("{"):text.index("(The // notes")]
-        template = json.loads(re.sub(r"//[^\n]*", "", block))
-    except ValueError as exc:
+        block = re.search(r"^\{\n.*?^\}$", text, re.S | re.M).group(0)
+        template = json.loads(block)
+    except (AttributeError, ValueError) as exc:
         errors.append(f"{prompt.relative_to(ROOT)}: can't read the manifest template ({exc})")
         return
     for field in sorted(set(schema["properties"]) - set(template)):
@@ -87,24 +87,30 @@ def check_form():
 
 def check_package(folder, manifest):
     where = f"{folder.name}/manifest.json"
-    if manifest.get("slug") != folder.name:
+    if manifest.get("slug", folder.name) != folder.name:
         errors.append(f"{where}: slug '{manifest.get('slug')}' doesn't match folder name")
 
     for field in ("class_size", "group_size"):
         rng = manifest.get(field)
         if rng and rng["max"] is not None and rng["min"] > rng["max"]:
             errors.append(f"{where}: {field} min is greater than max")
-    rng = manifest.get("duration", {}).get("in_class_minutes")
+    rng = (manifest.get("duration") or {}).get("in_class_minutes")
     if rng and rng["max"] is not None and rng["min"] > rng["max"]:
         errors.append(f"{where}: duration.in_class_minutes min is greater than max")
 
-    words = len(manifest.get("summary", "").split())
-    if not 60 <= words <= 180:
+    # Completeness is advice, not a rule: the library accepts anything from an idea up.
+    words = len((manifest.get("summary") or "").split())
+    if not words:
+        warnings.append(f"{where}: no summary")
+    elif not 60 <= words <= 180:
         warnings.append(f"{where}: summary is {words} words (aim for 60-180)")
 
     materials = manifest.get("materials", [])
-    if not any(m.get("role") == "instructor-guide" for m in materials):
-        errors.append(f"{where}: no material has role instructor-guide")
+    if manifest.get("stage") in ("ready-to-use", "classroom-tested") and not any(m.get("role") == "instructor-guide" for m in materials):
+        warnings.append(f"{where}: marked {manifest['stage']} but no material has role instructor-guide")
+    unconfirmed = [a["field"] for a in manifest.get("assumptions", []) if not a.get("confirmed")]
+    if unconfirmed:
+        warnings.append(f"{where}: assumptions not yet checked by the author: {', '.join(unconfirmed)}")
 
     listed = set()
     for m in materials:
@@ -127,9 +133,6 @@ def check_package(folder, manifest):
             continue
         if rel not in listed:
             errors.append(f"{folder.name}/{rel}: file isn't listed in materials")
-
-    if not manifest.get("author_confirmed"):
-        warnings.append(f"{where}: author_confirmed is false (author hasn't reviewed it)")
 
 
 def main():

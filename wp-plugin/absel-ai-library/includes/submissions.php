@@ -131,32 +131,18 @@ function absel_ail_manifest_errors( $manifest ) {
 	if ( $errors ) {
 		return $errors;
 	}
-	if ( true !== $manifest->author_confirmed ) {
-		$errors[] = 'author_confirmed: the author has not confirmed the details';
-	}
-	if ( true !== $manifest->rights->author_owns_or_has_permission ) {
-		$errors[] = 'rights.author_owns_or_has_permission: must be confirmed';
-	}
-	$roles = array();
-	foreach ( $manifest->materials as $item ) {
-		$roles[] = $item->role;
-	}
-	if ( ! in_array( 'instructor-guide', $roles, true ) ) {
-		$errors[] = 'materials: no instructor guide';
+	// Nothing but the title is required. The author's one job is to check the assistant's guesses.
+	foreach ( isset( $manifest->assumptions ) ? $manifest->assumptions : array() as $i => $assumption ) {
+		if ( empty( $assumption->confirmed ) ) {
+			$errors[] = "assumptions.{$i}: not yet checked by the author ({$assumption->field})";
+		}
 	}
 	$names = absel_ail_manifest_files( $manifest );
 	if ( count( $names ) !== count( array_unique( array_map( 'strtolower', $names ) ) ) ) {
 		$errors[] = 'materials: a file is listed twice';
 	}
-	$types = absel_ail_mime_types();
-	foreach ( $names as $name ) {
-		if ( false !== strpos( $name, '/' ) ) {
-			$errors[] = "materials: {$name}: files in subfolders can't be uploaded yet";
-		} elseif ( 'manifest.json' === strtolower( $name ) ) {
-			$errors[] = 'materials: manifest.json is a reserved name';
-		} elseif ( ! isset( $types[ strtolower( pathinfo( $name, PATHINFO_EXTENSION ) ) ] ) ) {
-			$errors[] = "materials: {$name}: this file type can't be uploaded";
-		}
+	if ( in_array( 'manifest.json', array_map( 'strtolower', $names ), true ) ) {
+		$errors[] = 'materials: manifest.json is a reserved name';
 	}
 	return $errors;
 }
@@ -376,6 +362,19 @@ function absel_ail_rest_create( WP_REST_Request $request ) {
 	if ( $problems ) {
 		return new WP_Error( 'absel_ail_invalid', __( 'Some details need fixing before this can be submitted.', 'absel-ai-library' ), array( 'status' => 400, 'problems' => $problems ) );
 	}
+	// Submitting is the author's statement that they can share the materials, and that
+	// they've checked the assistant's guesses (enforced above).
+	if ( ! isset( $manifest->rights ) || ! is_object( $manifest->rights ) ) {
+		$manifest->rights = new stdClass();
+	}
+	$manifest->rights->author_owns_or_has_permission = true;
+	$manifest->author_confirmed                      = true;
+	if ( empty( $manifest->slug ) ) {
+		$manifest->slug = trim( substr( preg_replace( '/[^a-z0-9]+/', '-', strtolower( remove_accents( $manifest->title ) ) ), 0, 60 ), '-' );
+		if ( '' === $manifest->slug ) {
+			unset( $manifest->slug );
+		}
+	}
 	$replaces = isset( $body->replaces ) ? (int) $body->replaces : 0;
 	if ( $replaces ) {
 		$earlier = absel_ail_own_submission( $replaces );
@@ -423,6 +422,10 @@ function absel_ail_rest_upload( WP_REST_Request $request ) {
 	if ( ! in_array( $name, absel_ail_manifest_files( absel_ail_submission_manifest( $post->ID ) ), true ) ) {
 		return new WP_Error( 'absel_ail_unlisted', __( 'That file is not in the list of files.', 'absel-ai-library' ), array( 'status' => 400 ) );
 	}
+	$types = absel_ail_mime_types();
+	if ( false !== strpos( $name, '/' ) || ! isset( $types[ strtolower( pathinfo( $name, PATHINFO_EXTENSION ) ) ] ) ) {
+		return new WP_Error( 'absel_ail_type', __( 'This type of file can\'t be uploaded.', 'absel-ai-library' ), array( 'status' => 400 ) );
+	}
 	if ( ! $file || UPLOAD_ERR_OK !== $file['error'] ) {
 		$too_big = $file && in_array( $file['error'], array( UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE ), true );
 		return new WP_Error(
@@ -452,20 +455,14 @@ function absel_ail_rest_finish( WP_REST_Request $request ) {
 	if ( 'uploading' !== absel_ail_submission_state( $post->ID ) ) {
 		return new WP_Error( 'absel_ail_closed', __( 'This submission has already been sent.', 'absel-ai-library' ), array( 'status' => 409 ) );
 	}
+	// Files the author listed but didn't attach are allowed; editors see them as not received.
 	$dir      = absel_ail_submission_dir( $post->ID );
 	$replaces = (int) get_post_meta( $post->ID, '_absel_sub_replaces', true );
-	$missing  = array();
 	foreach ( absel_ail_manifest_files( absel_ail_submission_manifest( $post->ID ) ) as $name ) {
-		if ( is_file( $dir . '/' . $name ) ) {
-			continue;
-		}
 		$earlier = $replaces ? absel_ail_submission_dir( $replaces ) . '/' . $name : '';
-		if ( ! $earlier || ! is_file( $earlier ) || ! copy( $earlier, $dir . '/' . $name ) ) {
-			$missing[] = $name;
+		if ( ! is_file( $dir . '/' . $name ) && $earlier && false === strpos( $name, '/' ) && is_file( $earlier ) ) {
+			copy( $earlier, $dir . '/' . $name );
 		}
-	}
-	if ( $missing ) {
-		return new WP_Error( 'absel_ail_missing', __( 'Some files are missing.', 'absel-ai-library' ), array( 'status' => 400, 'problems' => $missing ) );
 	}
 	update_post_meta( $post->ID, '_absel_sub_state', 'submitted' );
 	update_post_meta( $post->ID, '_absel_sub_submitted', time() );

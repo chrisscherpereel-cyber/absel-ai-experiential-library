@@ -37,7 +37,7 @@ add_action( 'manage_absel_submission_posts_custom_column', function ( $column, $
 			}
 			break;
 		case 'absel_fields':
-			$manifest = absel_ail_submission_manifest( $id );
+			$manifest = absel_ail_manifest_view( absel_ail_submission_manifest( $id ) );
 			echo esc_html( $manifest ? implode( ', ', array_map( 'absel_ail_label', $manifest->disciplines ) ) : '' );
 			break;
 		case 'absel_date':
@@ -117,6 +117,46 @@ add_action( 'add_meta_boxes_absel_submission', function ( $post ) {
 	add_meta_box( 'absel_sub_decision', __( 'Decision', 'absel-ai-library' ), 'absel_ail_box_decision', 'absel_submission', 'side', 'high' );
 } );
 
+/**
+ * A copy of a manifest with every field present (empty when not given), for display.
+ * Submissions can contain anything from a title alone to a full package.
+ */
+function absel_ail_manifest_view( $manifest ) {
+	if ( ! $manifest ) {
+		return null;
+	}
+	$m        = json_decode( wp_json_encode( $manifest ) );
+	$defaults = array(
+		'slug' => '', 'stage' => '', 'summary' => '', 'description' => null, 'version' => '', 'version_notes' => null,
+		'authors' => array(), 'exercise_types' => array(), 'disciplines' => array(), 'courses' => array(), 'topics' => array(),
+		'learning_objectives' => array(), 'skills' => array(), 'levels' => array(), 'delivery_modes' => array(),
+		'technology' => array(), 'materials' => array(), 'prior_publications' => array(), 'assumptions' => array(),
+		'class_size' => null, 'group_size' => null, 'prep_time_minutes' => null, 'technology_notes' => null,
+		'cost_to_students' => null, 'ai_involvement' => null, 'classroom_testing' => null,
+		'evidence_of_effectiveness' => null, 'license' => '', 'generated_with' => null,
+	);
+	foreach ( $defaults as $key => $value ) {
+		if ( ! property_exists( $m, $key ) || ( null === $m->$key && is_array( $value ) ) ) {
+			$m->$key = $value;
+		}
+	}
+	if ( '' === $m->slug ) {
+		$m->slug = trim( substr( preg_replace( '/[^a-z0-9]+/', '-', strtolower( remove_accents( $m->title ) ) ), 0, 60 ), '-' );
+	}
+	$m->duration = isset( $m->duration ) && is_object( $m->duration ) ? $m->duration : new stdClass();
+	foreach ( array( 'in_class_minutes', 'sessions', 'out_of_class_hours' ) as $key ) {
+		if ( ! property_exists( $m->duration, $key ) ) {
+			$m->duration->$key = null;
+		}
+	}
+	$m->rights = isset( $m->rights ) && is_object( $m->rights ) ? $m->rights : new stdClass();
+	if ( ! isset( $m->rights->third_party_materials ) ) {
+		$m->rights->third_party_materials = array();
+	}
+	$m->rights->contains_identifiable_student_information = ! empty( $m->rights->contains_identifiable_student_information );
+	return $m;
+}
+
 function absel_ail_label( $value ) {
 	$labels = array(
 		'graduate'           => "Graduate (master's, MBA)",
@@ -148,7 +188,7 @@ function absel_ail_range_text( $range, $unit ) {
 }
 
 function absel_ail_box_checks( $post ) {
-	$manifest = absel_ail_submission_manifest( $post->ID );
+	$manifest = absel_ail_manifest_view( absel_ail_submission_manifest( $post->ID ) );
 	if ( ! $manifest ) {
 		echo '<p>' . esc_html__( 'This submission has no details.', 'absel-ai-library' ) . '</p>';
 		return;
@@ -157,6 +197,28 @@ function absel_ail_box_checks( $post ) {
 	$state  = absel_ail_submission_state( $post->ID );
 	if ( 'uploading' === $state ) {
 		$checks[] = array( 'warn', __( 'The author has not finished sending this submission. Unfinished submissions are deleted after two days.', 'absel-ai-library' ) );
+	}
+	$stage_text = array(
+		'idea'             => __( 'Stage: an idea. Judge it as a concept; no runnable materials are expected.', 'absel-ai-library' ),
+		'in-development'   => __( "Stage: in development. Some materials exist but it isn't complete.", 'absel-ai-library' ),
+		'ready-to-use'     => __( 'Stage: ready to use. Check that another instructor could run it from these files.', 'absel-ai-library' ),
+		'classroom-tested' => __( 'Stage: classroom-tested. Check that another instructor could run it from these files.', 'absel-ai-library' ),
+	);
+	$checks[] = array( 'info', esc_html( isset( $stage_text[ $manifest->stage ] ) ? $stage_text[ $manifest->stage ] : __( 'Stage: not stated.', 'absel-ai-library' ) ) );
+	if ( $manifest->assumptions ) {
+		/* translators: %d: number of assumptions */
+		$checks[] = array( 'info', sprintf( esc_html__( 'The drafting assistant made %d guesses, which the author checked or corrected. They are listed under Details.', 'absel-ai-library' ), count( $manifest->assumptions ) ) );
+	}
+	if ( $manifest->rights->contains_identifiable_student_information ) {
+		$checks[] = array( 'warn', esc_html__( 'The materials may contain student names, grades or identifiable work. Have it removed before publication.', 'absel-ai-library' ) );
+	}
+	$missing = array_diff( absel_ail_manifest_files( $manifest ), array_keys( absel_ail_submission_files( $post->ID ) ) );
+	if ( $missing ) {
+		/* translators: %s: file names */
+		$checks[] = array( 'warn', sprintf( esc_html__( 'Listed but not received: %s. Ask the author for them if needed.', 'absel-ai-library' ), esc_html( implode( ', ', $missing ) ) ) );
+	}
+	if ( ! $manifest->materials ) {
+		$checks[] = array( 'info', esc_html__( 'No files or links: this submission is a description only.', 'absel-ai-library' ) );
 	}
 	$replaces = (int) get_post_meta( $post->ID, '_absel_sub_replaces', true );
 	if ( $replaces ) {
@@ -188,17 +250,17 @@ function absel_ail_box_checks( $post ) {
 		/* translators: %s: folder name */
 		$checks[] = array( 'warn', sprintf( esc_html__( 'The library already has a folder named "%s". Choose a different folder name when you accept.', 'absel-ai-library' ), esc_html( $folder ) ) );
 	}
-	if ( isset( $manifest->classroom_testing ) && 0 === $manifest->classroom_testing->times_used ) {
+	if ( $manifest->classroom_testing && isset( $manifest->classroom_testing->times_used ) && 0 === $manifest->classroom_testing->times_used ) {
 		$checks[] = array( 'info', esc_html__( 'Not yet used with students.', 'absel-ai-library' ) );
-	} elseif ( ! isset( $manifest->classroom_testing ) ) {
-		$checks[] = array( 'info', esc_html__( 'No classroom testing information given.', 'absel-ai-library' ) );
 	}
 	if ( ! empty( $manifest->generated_with ) ) {
 		/* translators: %s: AI tool name */
 		$checks[] = array( 'info', sprintf( esc_html__( 'Details drafted with %s and confirmed by the author.', 'absel-ai-library' ), esc_html( $manifest->generated_with ) ) );
 	}
-	$words = str_word_count( $manifest->summary );
-	if ( $words < 60 || $words > 180 ) {
+	$words = str_word_count( (string) $manifest->summary );
+	if ( ! $words ) {
+		$checks[] = array( 'info', esc_html__( 'No summary. Write one before publishing.', 'absel-ai-library' ) );
+	} elseif ( $words < 60 || $words > 180 ) {
 		/* translators: %d: word count */
 		$checks[] = array( 'info', sprintf( esc_html__( 'The summary is %d words (the guideline is 60 to 180).', 'absel-ai-library' ), $words ) );
 	}
@@ -212,7 +274,7 @@ function absel_ail_box_checks( $post ) {
 }
 
 function absel_ail_box_details( $post ) {
-	$m = absel_ail_submission_manifest( $post->ID );
+	$m = absel_ail_manifest_view( absel_ail_submission_manifest( $post->ID ) );
 	if ( ! $m ) {
 		return;
 	}
@@ -242,10 +304,21 @@ function absel_ail_box_details( $post ) {
 	foreach ( isset( $m->prior_publications ) ? $m->prior_publications : array() as $p ) {
 		$publications[] = esc_html( $p->citation ) . ( ! empty( $p->doi ) ? ' doi:' . esc_html( $p->doi ) : '' );
 	}
-	$ai = isset( $m->ai_involvement ) ? $m->ai_involvement : null;
+	$ai      = $m->ai_involvement;
+	$guesses = array();
+	foreach ( $m->assumptions as $a ) {
+		$guesses[] = '<strong>' . esc_html( $a->field ) . '</strong>: ' . esc_html( $a->basis )
+			. ( empty( $a->confirmed ) ? '' : ' <span style="color:#00a32a">✓ ' . esc_html__( 'checked by the author', 'absel-ai-library' ) . '</span>' );
+	}
+	$time = absel_ail_range_text( $m->duration->in_class_minutes, 'minutes' );
+	if ( $m->duration->sessions ) {
+		/* translators: %d: number of class sessions */
+		$time .= ( $time ? ', ' : '' ) . sprintf( _n( '%d session', '%d sessions', $m->duration->sessions, 'absel-ai-library' ), $m->duration->sessions );
+	}
 
 	$rows = array(
 		__( 'Submitted by', 'absel-ai-library' )      => esc_html( get_post_meta( $post->ID, '_absel_sub_name', true ) . ' <' . get_post_meta( $post->ID, '_absel_sub_email', true ) . '>' ),
+		__( 'Stage', 'absel-ai-library' )             => $labels( $m->stage ? array( $m->stage ) : array() ),
 		__( 'Summary', 'absel-ai-library' )           => $text( $m->summary ),
 		__( 'Description', 'absel-ai-library' )       => $text( isset( $m->description ) ? $m->description : null ),
 		__( 'Authors', 'absel-ai-library' )           => implode( '<br>', $authors ),
@@ -253,23 +326,24 @@ function absel_ail_box_details( $post ) {
 		__( 'Disciplines', 'absel-ai-library' )       => $labels( $m->disciplines ),
 		__( 'Topics', 'absel-ai-library' )            => esc_html( implode( ', ', $m->topics ) ),
 		__( 'Learning objectives', 'absel-ai-library' ) => $objectives,
-		__( 'Courses', 'absel-ai-library' )           => esc_html( implode( ', ', isset( $m->courses ) ? $m->courses : array() ) ),
-		__( 'Skills', 'absel-ai-library' )            => $labels( isset( $m->skills ) ? $m->skills : array() ),
+		__( 'Courses', 'absel-ai-library' )           => esc_html( implode( ', ', $m->courses ) ),
+		__( 'Skills', 'absel-ai-library' )            => $labels( $m->skills ),
 		__( 'Levels', 'absel-ai-library' )            => $labels( $m->levels ),
 		__( 'Delivery', 'absel-ai-library' )          => $labels( $m->delivery_modes ),
-		__( 'Class time', 'absel-ai-library' )        => esc_html( absel_ail_range_text( $m->duration->in_class_minutes, 'minutes' ) . ', ' . $m->duration->sessions . ' ' . _n( 'session', 'sessions', $m->duration->sessions, 'absel-ai-library' ) ),
+		__( 'Class time', 'absel-ai-library' )        => esc_html( $time ),
 		__( 'Class size', 'absel-ai-library' )        => esc_html( absel_ail_range_text( $m->class_size, 'students' ) ),
-		__( 'Team size', 'absel-ai-library' )         => esc_html( absel_ail_range_text( isset( $m->group_size ) ? $m->group_size : null, 'per team' ) ),
-		__( 'Instructor prep', 'absel-ai-library' )   => $text( isset( $m->prep_time_minutes ) && null !== $m->prep_time_minutes ? $m->prep_time_minutes . ' minutes' : null ),
+		__( 'Team size', 'absel-ai-library' )         => esc_html( absel_ail_range_text( $m->group_size, 'per team' ) ),
+		__( 'Instructor prep', 'absel-ai-library' )   => $text( null !== $m->prep_time_minutes ? $m->prep_time_minutes . ' minutes' : null ),
 		__( 'Technology', 'absel-ai-library' )        => $labels( $m->technology ) . ( ! empty( $m->technology_notes ) ? '<br>' . esc_html( $m->technology_notes ) : '' ),
-		__( 'Cost to students', 'absel-ai-library' )  => $labels( isset( $m->cost_to_students ) ? array( $m->cost_to_students ) : array() ),
-		__( 'AI', 'absel-ai-library' )                => $ai ? esc_html( ( $ai->topic_is_ai ? __( 'Teaches about AI. ', 'absel-ai-library' ) : '' ) . sprintf( /* translators: %s: none, optional or required */ __( 'Students use AI: %s.', 'absel-ai-library' ), $ai->students_use_ai ) . ( ! empty( $ai->notes ) ? ' ' . $ai->notes : '' ) ) : '',
-		__( 'Times used', 'absel-ai-library' )        => $text( isset( $m->classroom_testing ) ? $m->classroom_testing->times_used . ( ! empty( $m->classroom_testing->contexts ) ? ': ' . $m->classroom_testing->contexts : '' ) : null ),
-		__( 'Evidence', 'absel-ai-library' )          => $text( isset( $m->evidence_of_effectiveness ) ? $m->evidence_of_effectiveness : null ),
+		__( 'Cost to students', 'absel-ai-library' )  => $labels( $m->cost_to_students ? array( $m->cost_to_students ) : array() ),
+		__( 'AI', 'absel-ai-library' )                => $ai ? esc_html( ( ! empty( $ai->topic_is_ai ) ? __( 'Teaches about AI. ', 'absel-ai-library' ) : '' ) . ( ! empty( $ai->students_use_ai ) ? sprintf( /* translators: %s: none, optional or required */ __( 'Students use AI: %s.', 'absel-ai-library' ), $ai->students_use_ai ) : '' ) . ( ! empty( $ai->notes ) ? ' ' . $ai->notes : '' ) ) : '',
+		__( 'Times used', 'absel-ai-library' )        => $text( $m->classroom_testing ? trim( ( isset( $m->classroom_testing->times_used ) ? $m->classroom_testing->times_used : '' ) . ( ! empty( $m->classroom_testing->contexts ) ? ': ' . $m->classroom_testing->contexts : '' ), ': ' ) : null ),
+		__( 'Evidence', 'absel-ai-library' )          => $text( $m->evidence_of_effectiveness ),
 		__( 'Publications', 'absel-ai-library' )      => implode( '<br>', $publications ),
 		__( 'Third-party material', 'absel-ai-library' ) => $third ? implode( '<br>', $third ) : esc_html__( 'None declared', 'absel-ai-library' ),
-		__( 'License', 'absel-ai-library' )           => $labels( array( $m->license ) ),
+		__( 'License', 'absel-ai-library' )           => $m->license ? $labels( array( $m->license ) ) : esc_html__( 'Not chosen (ABSEL members only applies)', 'absel-ai-library' ),
 		__( 'Version', 'absel-ai-library' )           => esc_html( $m->version . ( ! empty( $m->version_notes ) ? ': ' . $m->version_notes : '' ) ),
+		__( "Assistant's guesses", 'absel-ai-library' ) => $guesses ? implode( '<br>', $guesses ) : esc_html__( 'None', 'absel-ai-library' ),
 	);
 	echo '<table class="widefat striped" style="border:0"><tbody>';
 	foreach ( $rows as $label => $html ) {
@@ -284,10 +358,14 @@ function absel_ail_box_details( $post ) {
 }
 
 function absel_ail_box_files( $post ) {
-	$manifest = absel_ail_submission_manifest( $post->ID );
+	$manifest = absel_ail_manifest_view( absel_ail_submission_manifest( $post->ID ) );
 	$stored   = absel_ail_submission_files( $post->ID );
+	if ( ! $manifest || ! $manifest->materials ) {
+		echo '<p>' . esc_html__( 'No files or links were submitted.', 'absel-ai-library' ) . '</p>';
+		return;
+	}
 	echo '<table class="widefat striped"><thead><tr><th>' . esc_html__( 'File', 'absel-ai-library' ) . '</th><th>' . esc_html__( 'Type', 'absel-ai-library' ) . '</th><th>' . esc_html__( 'Who may see it', 'absel-ai-library' ) . '</th><th>' . esc_html__( 'Size', 'absel-ai-library' ) . '</th></tr></thead><tbody>';
-	foreach ( $manifest ? $manifest->materials : array() as $item ) {
+	foreach ( $manifest->materials as $item ) {
 		if ( isset( $item->url ) ) {
 			$name = sprintf( '<a href="%s" target="_blank" rel="noopener noreferrer">%s</a> <small>(%s)</small>', esc_url( $item->url ), esc_html( $item->title ), esc_html__( 'link', 'absel-ai-library' ) );
 			$size = '';
@@ -295,14 +373,14 @@ function absel_ail_box_files( $post ) {
 			$name = sprintf( '<a href="%s">%s</a><br><small>%s</small>', esc_url( absel_ail_submission_file_url( $post->ID, $item->file ) ), esc_html( $item->file ), esc_html( $item->title ) );
 			$size = size_format( $stored[ $item->file ] );
 		} else {
-			$name = esc_html( $item->file ) . ' <strong style="color:#b32d2e">' . esc_html__( 'missing', 'absel-ai-library' ) . '</strong>';
+			$name = esc_html( $item->file ) . ' <strong style="color:#b32d2e">' . esc_html__( 'not received', 'absel-ai-library' ) . '</strong>';
 			$size = '';
 		}
 		printf(
 			'<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>',
 			wp_kses_post( $name ),
-			esc_html( absel_ail_label( $item->role ) ),
-			esc_html( 'instructor-only' === $item->audience ? __( 'Instructor only', 'absel-ai-library' ) : __( 'Students', 'absel-ai-library' ) ),
+			esc_html( isset( $item->role ) ? absel_ail_label( $item->role ) : '—' ),
+			esc_html( ! isset( $item->audience ) ? '—' : ( 'instructor-only' === $item->audience ? __( 'Instructor only', 'absel-ai-library' ) : __( 'Students', 'absel-ai-library' ) ) ),
 			esc_html( $size )
 		);
 	}
@@ -312,7 +390,7 @@ function absel_ail_box_files( $post ) {
 function absel_ail_box_decision( $post ) {
 	$state    = absel_ail_submission_state( $post->ID );
 	$states   = absel_ail_submission_states();
-	$manifest = absel_ail_submission_manifest( $post->ID );
+	$manifest = absel_ail_manifest_view( absel_ail_submission_manifest( $post->ID ) );
 	$activity = absel_ail_previous_activity( $post->ID );
 	$folder   = $activity ? get_post_meta( $activity, '_absel_ail_folder', true ) : ( $manifest ? absel_ail_sanitize_folder( $manifest->slug ) : '' );
 	wp_nonce_field( 'absel_ail_decision', 'absel_ail_decision_nonce' );
@@ -399,6 +477,7 @@ function absel_ail_previous_activity( $id ) {
  */
 function absel_ail_accept_submission( $id, $folder, $message = '' ) {
 	$manifest = absel_ail_submission_manifest( $id );
+	$view     = absel_ail_manifest_view( $manifest );
 	$activity = absel_ail_previous_activity( $id );
 	if ( $activity ) {
 		$folder = get_post_meta( $activity, '_absel_ail_folder', true );
@@ -421,8 +500,9 @@ function absel_ail_accept_submission( $id, $folder, $message = '' ) {
 			unlink( $target . '/' . $name );
 		}
 	}
+	// Files listed but never received are left out; the manifest still lists them.
 	$source = absel_ail_submission_dir( $id );
-	foreach ( absel_ail_manifest_files( $manifest ) as $name ) {
+	foreach ( array_keys( absel_ail_submission_files( $id ) ) as $name ) {
 		if ( ! copy( $source . '/' . $name, $target . '/' . $name ) ) {
 			/* translators: %s: file name */
 			return new WP_Error( 'absel_ail_copy', sprintf( __( 'Could not copy %s into the library.', 'absel-ai-library' ), $name ) );
@@ -432,33 +512,35 @@ function absel_ail_accept_submission( $id, $folder, $message = '' ) {
 	$json           = wp_json_encode( $manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
 	file_put_contents( $target . '/manifest.json', $json . "\n" );
 
-	$duration = absel_ail_range_text( $manifest->duration->in_class_minutes, 'minutes' )
-		. ( $manifest->duration->sessions > 1 ? sprintf( ' over %d sessions', $manifest->duration->sessions ) : '' );
+	$duration = absel_ail_range_text( $view->duration->in_class_minutes, 'minutes' )
+		. ( $view->duration->sessions > 1 ? sprintf( ' over %d sessions', $view->duration->sessions ) : '' );
 	$group    = '';
-	if ( isset( $manifest->group_size ) ) {
-		$group = 1 === $manifest->group_size->max ? 'Individual' : absel_ail_range_text( $manifest->group_size, 'per team' );
+	if ( $view->group_size ) {
+		$group = 1 === $view->group_size->max ? 'Individual' : absel_ail_range_text( $view->group_size, 'per team' );
 	}
 
 	if ( ! $activity ) {
-		$content = '<!-- wp:paragraph --><p>' . esc_html( $manifest->summary ) . '</p><!-- /wp:paragraph -->'
-			. '<!-- wp:heading {"level":3} --><h3>' . esc_html__( 'Learning objectives', 'absel-ai-library' ) . '</h3><!-- /wp:heading -->'
-			. '<!-- wp:list --><ul>';
-		foreach ( $manifest->learning_objectives as $objective ) {
-			$content .= '<!-- wp:list-item --><li>' . esc_html( $objective ) . '</li><!-- /wp:list-item -->';
+		$content = $view->summary ? '<!-- wp:paragraph --><p>' . esc_html( $view->summary ) . '</p><!-- /wp:paragraph -->' : '';
+		if ( $view->learning_objectives ) {
+			$content .= '<!-- wp:heading {"level":3} --><h3>' . esc_html__( 'Learning objectives', 'absel-ai-library' ) . '</h3><!-- /wp:heading -->'
+				. '<!-- wp:list --><ul>';
+			foreach ( $view->learning_objectives as $objective ) {
+				$content .= '<!-- wp:list-item --><li>' . esc_html( $objective ) . '</li><!-- /wp:list-item -->';
+			}
+			$content .= '</ul><!-- /wp:list -->';
 		}
-		$content .= '</ul><!-- /wp:list -->';
 		$activity = wp_insert_post( array(
 			'post_type'    => 'absel_activity',
 			'post_status'  => 'draft',
 			'post_title'   => $manifest->title,
-			'post_excerpt' => $manifest->summary,
+			'post_excerpt' => (string) $view->summary,
 			'post_content' => $content,
 		), true );
 		if ( is_wp_error( $activity ) ) {
 			return $activity;
 		}
-		wp_set_object_terms( $activity, array_map( 'absel_ail_label', $manifest->disciplines ), 'discipline' );
-		wp_set_object_terms( $activity, array_map( 'absel_ail_label', $manifest->delivery_modes ), 'activity_format' );
+		wp_set_object_terms( $activity, array_map( 'absel_ail_label', $view->disciplines ), 'discipline' );
+		wp_set_object_terms( $activity, array_map( 'absel_ail_label', $view->delivery_modes ), 'activity_format' );
 	}
 	update_post_meta( $activity, '_absel_ail_folder', $folder );
 	update_post_meta( $activity, '_absel_ail_duration', $duration );
