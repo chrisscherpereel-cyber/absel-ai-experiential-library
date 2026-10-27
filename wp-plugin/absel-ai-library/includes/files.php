@@ -68,6 +68,10 @@ function absel_ail_serve_file() {
 			absel_ail_file_error( 404 );
 		}
 	}
+	// The manifest holds author emails and rights details meant for editors.
+	if ( 0 === strcasecmp( basename( $relative ), 'manifest.json' ) ) {
+		absel_ail_file_error( 404 );
+	}
 	$base = realpath( ABSEL_AIL_CONTENT_DIR );
 	$path = $base ? realpath( $base . '/' . $relative ) : false;
 	if ( ! $path || 0 !== strpos( $path, $base . DIRECTORY_SEPARATOR ) || ! is_file( $path ) ) {

@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0",
+  "title": "Negotiating with an Algorithmic Supplier",
+  "slug": "negotiation-supplier",
+  "summary": "Students play a procurement manager buying 5,000 temperature sensors and negotiate with Dana, a rule-based supplier agent that runs in the browser. They make structured offers on price, delivery, payment terms, warranty and contract length, and can ask Dana questions to uncover her interests. Because the agent follows fixed rules, every student faces the same counterpart, and each receives a score, so results can be compared across the class. The debrief covers anchoring, reciprocity, trading across issues, and what it means to negotiate with, or deploy, automated negotiation agents. It runs in one class session or as an individual assignment and needs only a web browser.",
+  "description": null,
+  "authors": [
+    { "name": "Chris Scherpereel", "affiliation": "Northern Arizona University", "email": null, "orcid": null, "corresponding": true }
+  ],
+  "exercise_types": ["simulation"],
+  "disciplines": ["negotiation", "supply-chain-management"],
+  "courses": ["Negotiation", "Purchasing and Supply Management", "Supply Chain Management"],
+  "topics": [
+    "multi-issue negotiation", "integrative negotiation", "logrolling", "anchoring",
+    "reciprocity", "concession patterns", "reservation price", "procurement",
+    "supplier negotiation", "algorithmic agents", "automated negotiation"
+  ],
+  "learning_objectives": [
+    "Prepare for and conduct a multi-issue negotiation covering price, delivery, payment terms, warranty and contract length",
+    "Create value by trading issues the parties value differently",
+    "Use questions to uncover the other party's interests and constraints",
+    "Explain how anchoring, reciprocity and concession patterns shaped their negotiated outcome",
+    "Describe how a rule-based negotiating agent makes decisions and evaluate the implications of negotiating with or deploying automated agents"
+  ],
+  "skills": ["negotiation-and-persuasion", "decision-making", "ai-literacy", "critical-thinking", "reflective-thinking"],
+  "levels": ["undergraduate-advanced", "graduate"],
+  "delivery_modes": ["in-person", "online-asynchronous"],
+  "duration": { "in_class_minutes": { "min": 55, "max": 75 }, "sessions": 1, "out_of_class_hours": null },
+  "class_size": { "min": 1, "max": null },
+  "group_size": { "min": 1, "max": 2 },
+  "prep_time_minutes": null,
+  "technology": ["student-devices", "internet"],
+  "technology_notes": "Runs in any current web browser. Students open it through an instructor's student link; no student account is needed.",
+  "cost_to_students": "free",
+  "ai_involvement": {
+    "topic_is_ai": true,
+    "students_use_ai": "none",
+    "notes": "The counterpart is a rule-based algorithm, not generative AI. Nothing students type leaves the browser."
+  },
+  "materials": [
+    { "file": "facilitator-guide.pdf", "title": "Facilitator guide", "role": "instructor-guide", "audience": "instructor-only", "notes": "Includes Dana's rules, scoring, benchmark results and debrief questions." },
+    { "file": "index.html", "title": "Simulation", "role": "simulation", "audience": "student-facing", "notes": "The student brief is built into the simulation." }
+  ],
+  "classroom_testing": { "times_used": 0, "contexts": "Tested with scripted strategies only; not yet used with students." },
+  "evidence_of_effectiveness": null,
+  "prior_publications": [],
+  "rights": {
+    "author_owns_or_has_permission": true,
+    "third_party_materials": [],
+    "contains_identifiable_student_information": false
+  },
+  "license": "absel-member-use",
+  "version": "0.2",
+  "version_notes": "Rule-based counterpart replaces the earlier AI-powered version.",
+  "generated_with": "Claude Opus 5.5 (test of the author prompt)",
+  "author_confirmed": false
+}

@@ -5,8 +5,18 @@ Source for ABSEL's members-only library of AI experiential learning activities a
 ```
 activities/              one folder per activity (see activities/_template/README.md)
   negotiation-supplier/  working example: negotiate with a rule-based supplier agent
+schema/                  indexing rules: exercise.schema.json + INDEXING-RULES.md
+author-kit/              author-prompt.md: drafts a manifest with the author's own AI assistant
+tools/check_library.py   validates manifests and packages; keeps the rules and prompt in sync
 wp-plugin/
   absel-ai-library/      WordPress plugin that publishes and protects the library
+```
+
+Every activity has a `manifest.json` describing it (see [the indexing rules](schema/INDEXING-RULES.md)). After changing an activity, the schema, the rules or the prompt, run:
+
+```
+pip install jsonschema
+py tools/check_library.py
 ```
 
 Simulations are self-contained web pages that run in the browser. Nothing calls an outside AI service, so there's no API key, no usage cost and no student data leaving the page. The earlier version, with a live Claude-powered simulation, is kept under the git tag `ai-version-0.1.0`.
@@ -29,7 +39,7 @@ Use Bluehost's staging tool (in the Bluehost dashboard, or the Bluehost plugin i
    Without this line, the plugin uses `wp-content/absel-ai-library` and blocks direct access with `.htaccess`.
 3. **Configure** under **Settings → AI Library**: check that both status items are green, and choose the membership levels allowed in (leave empty for all active members).
 4. **Upload an activity.** Copy `activities/negotiation-supplier/` into the library directory (SFTP or File Manager). Export `facilitator-guide.md` to PDF first and upload the PDF; `.md` files are not served.
-5. **Create the Activity entry.** Go to **AI Activities → Add New**, fill in the description from `meta.json`, and set **Activity folder** to `negotiation-supplier`. Optionally tick the Simple Membership protection box to hide the description itself from non-members.
+5. **Create the Activity entry.** Go to **AI Activities → Add New**, fill in the description from `manifest.json`, and set **Activity folder** to `negotiation-supplier`. Optionally tick the Simple Membership protection box to hide the description itself from non-members.
 6. **Flush permalinks** once: **Settings → Permalinks → Save Changes**.
 
 ## Test checklist
