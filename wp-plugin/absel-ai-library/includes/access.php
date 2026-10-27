@@ -42,17 +42,6 @@ function absel_ail_member_has_access() {
 	return empty( $levels ) || in_array( $member['level'], $levels, true );
 }
 
-/**
- * Stable per-person key for usage limits and request tokens.
- */
-function absel_ail_usage_key() {
-	$member = absel_ail_current_member();
-	if ( $member ) {
-		return 'm' . $member['id'];
-	}
-	return 'u' . get_current_user_id();
-}
-
 /*
  * Student links. Students are not ABSEL members, so a member can hand a class
  * a link that opens one activity's simulation (not its instructor materials)
@@ -71,7 +60,7 @@ function absel_ail_class_pass_create( $folder ) {
 }
 
 /**
- * @return array{owner:string,folder:string,expires:int,key:string}|null
+ * @return array{owner:string,folder:string,expires:int}|null
  */
 function absel_ail_class_pass_verify( $pass, $folder ) {
 	$parts = explode( '.', (string) $pass );
@@ -92,7 +81,6 @@ function absel_ail_class_pass_verify( $pass, $folder ) {
 		'owner'   => $owner,
 		'folder'  => $folder,
 		'expires' => (int) $expires,
-		'key'     => 'c' . substr( $signature, 0, 16 ),
 	);
 }
 

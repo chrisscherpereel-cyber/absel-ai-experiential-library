@@ -5,7 +5,7 @@
  * Files live in ABSEL_AIL_CONTENT_DIR, where direct web access is denied, and are
  * reached through https://site/ail-files/<folder>/<file>, which runs the
  * membership check first. Paths whose name starts with "_" or "." (such as
- * _system-prompt.md) are server-side only and never served.
+ * _notes.md) are server-side only and never served.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -51,7 +51,6 @@ function absel_ail_serve_file() {
 	$is_html  = (bool) preg_match( '/\.html?$/i', $relative );
 	$folder   = absel_ail_sanitize_folder( strtok( $relative, '/' ) );
 
-	$pass = null;
 	if ( ! absel_ail_member_has_access() ) {
 		$pass = absel_ail_class_pass_from_request( $folder );
 		// Student links open the simulation and its assets, not instructor materials.
@@ -86,11 +85,7 @@ function absel_ail_serve_file() {
 	header( 'X-Content-Type-Options: nosniff' );
 	header( 'X-Robots-Tag: noindex, nofollow' );
 
-	if ( $is_html ) {
-		echo absel_ail_inject_config( file_get_contents( $path ), $folder, $pass ); // phpcs:ignore WordPress.Security.EscapeOutput -- trusted activity file.
-		exit;
-	}
-	if ( ! preg_match( '/\.(css|js|json|svg|png|jpe?g|gif|webp)$/i', $path ) ) {
+	if ( ! preg_match( '/\.(html?|css|js|json|svg|png|jpe?g|gif|webp|mp4)$/i', $path ) ) {
 		header( 'Content-Disposition: attachment; filename="' . basename( $path ) . '"' );
 	}
 	header( 'Content-Length: ' . filesize( $path ) );
@@ -120,13 +115,9 @@ function absel_ail_class_pass_from_request( $folder ) {
 			) );
 		}
 	} elseif ( isset( $_COOKIE[ $cookie ] ) ) {
-		$raw  = sanitize_text_field( wp_unslash( $_COOKIE[ $cookie ] ) );
-		$pass = absel_ail_class_pass_verify( $raw, $folder );
+		$pass = absel_ail_class_pass_verify( sanitize_text_field( wp_unslash( $_COOKIE[ $cookie ] ) ), $folder );
 	} else {
 		return null;
-	}
-	if ( $pass ) {
-		$pass['raw'] = $raw;
 	}
 	return $pass;
 }
@@ -161,31 +152,4 @@ function absel_ail_mime_type( $path ) {
 	);
 	$ext = strtolower( pathinfo( $path, PATHINFO_EXTENSION ) );
 	return isset( $types[ $ext ] ) ? $types[ $ext ] : null;
-}
-
-/**
- * Gives a simulation page what it needs to call the AI proxy: the endpoint,
- * its activity name, and per-member tokens that stop other sites from
- * spending the library's API budget through a member's browser.
- */
-function absel_ail_inject_config( $html, $folder, $pass = null ) {
-	$config = array(
-		'endpoint'  => rest_url( 'absel-ail/v1/chat' ),
-		'activity'  => $folder,
-		'token'     => absel_ail_request_token( $folder, null, $pass ? $pass['key'] : null ),
-		'classPass' => $pass ? $pass['raw'] : null,
-		'restNonce' => wp_create_nonce( 'wp_rest' ),
-	);
-	$script = '<script>window.ABSEL_AIL = ' . wp_json_encode( $config ) . ';</script>';
-	$count  = 0;
-	$html   = preg_replace_callback(
-		'/<head[^>]*>/i',
-		function ( $m ) use ( $script ) {
-			return $m[0] . $script;
-		},
-		$html,
-		1,
-		$count
-	);
-	return $count ? $html : $script . $html;
 }
