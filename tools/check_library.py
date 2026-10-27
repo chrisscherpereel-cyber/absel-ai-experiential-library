@@ -3,8 +3,8 @@
 Validates every activities/<slug>/manifest.json against schema/exercise.schema.json,
 checks each package against its manifest, and checks that the indexing rules and the
 author prompt list every allowed value in the schema, that the prompt's manifest
-template has the schema's fields, and that the submission form's copies of the schema
-and prompt are current.
+template has the schema's fields, and that the WordPress plugin's copies of the schema
+and prompt (in the submission page and in assets/) are current.
 
 Usage: py tools/check_library.py          (needs: pip install jsonschema)
 Exit code 1 if anything fails. Warnings don't fail the check.
@@ -80,6 +80,9 @@ def check_form():
         errors.append(f"{form}: its copy of the schema is out of date; run py tools/build_form.py")
     if current["prompt"] != expected["prompt"]:
         errors.append(f"{form}: its copy of the author prompt is out of date; run py tools/build_form.py")
+    plugin_schema = build_form.PLUGIN_SCHEMA
+    if not plugin_schema.is_file() or plugin_schema.read_text(encoding="utf-8") != build_form.SCHEMA.read_text(encoding="utf-8"):
+        errors.append(f"{plugin_schema.relative_to(ROOT)} is out of date; run py tools/build_form.py")
 
 
 def check_package(folder, manifest):

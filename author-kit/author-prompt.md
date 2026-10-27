@@ -5,7 +5,7 @@ This prompt helps you get an exercise ready for the ABSEL Exercise Library. You 
 1. **A submission review:** which file is which, what's missing, and problems to fix before you submit.
 2. **A draft of the exercise's details:** the indexing information the library needs, which the submission page loads so you don't have to type it in.
 
-The easiest way to use it is from the **Submit an exercise** page ([`submit.html`](submit.html)), which has a button that copies this prompt and a box for pasting the assistant's reply. This document is the same prompt with fuller instructions. Using AI is optional: the submission page also works as an ordinary form.
+The easiest way to use it is from the **Submit an exercise** page on absel.org (for ABSEL members), which has a button that copies this prompt and a box for pasting the assistant's reply. The same page also works offline as a single file, [`submit.html`](../wp-plugin/absel-ai-library/assets/submit.html), for preparing a manifest without submitting it. This document is the same prompt with fuller instructions. Using AI is optional: the submission page also works as an ordinary form.
 
 ## Before you start
 

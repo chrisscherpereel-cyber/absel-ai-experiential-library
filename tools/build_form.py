@@ -1,8 +1,11 @@
-"""Copy the schema and the author prompt into author-kit/submit.html.
+"""Copy the schema and the author prompt into the WordPress plugin.
 
-The submission form is a single self-contained page, so it carries its own copies of
-schema/exercise.schema.json and the prompt from author-kit/author-prompt.md. Run this
-after changing either one; tools/check_library.py fails while the copies are out of date.
+The submission page (wp-plugin/absel-ai-library/assets/submit.html) is a single
+self-contained page, so it carries its own copies of schema/exercise.schema.json and
+the prompt from author-kit/author-prompt.md. The plugin also checks submissions
+against its own copy of the schema (assets/exercise.schema.json). Run this after
+changing the schema or the prompt; tools/check_library.py fails while any copy is
+out of date.
 
 Usage: py tools/build_form.py
 """
@@ -13,7 +16,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SCHEMA = ROOT / "schema" / "exercise.schema.json"
 PROMPT_DOC = ROOT / "author-kit" / "author-prompt.md"
-FORM = ROOT / "author-kit" / "submit.html"
+ASSETS = ROOT / "wp-plugin" / "absel-ai-library" / "assets"
+FORM = ASSETS / "submit.html"
+PLUGIN_SCHEMA = ASSETS / "exercise.schema.json"
 
 BLOCKS = {
     "schema": re.compile(r'(<script type="application/json" id="absel-schema">)(.*?)(</script>)', re.S),
@@ -54,15 +59,18 @@ def build(html, content):
     return html
 
 
+def write_if_changed(path, text):
+    if path.is_file() and path.read_text(encoding="utf-8") == text:
+        print(f"{path.relative_to(ROOT)} is already up to date")
+        return
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        f.write(text)
+    print(f"updated {path.relative_to(ROOT)}")
+
+
 def main():
-    html = FORM.read_text(encoding="utf-8")
-    updated = build(html, sources())
-    if updated == html:
-        print(f"{FORM.relative_to(ROOT)} is already up to date")
-    else:
-        with open(FORM, "w", encoding="utf-8", newline="\n") as f:
-            f.write(updated)
-        print(f"updated {FORM.relative_to(ROOT)}")
+    write_if_changed(FORM, build(FORM.read_text(encoding="utf-8"), sources()))
+    write_if_changed(PLUGIN_SCHEMA, SCHEMA.read_text(encoding="utf-8"))
     return 0
 
 

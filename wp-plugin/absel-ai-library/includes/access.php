@@ -42,6 +42,62 @@ function absel_ail_member_has_access() {
 	return empty( $levels ) || in_array( $member['level'], $levels, true );
 }
 
+/**
+ * Who is acting: "m<id>" for a Simple Membership member, "u<id>" for an
+ * administrator without a member account, or "" for anyone else.
+ */
+function absel_ail_current_owner() {
+	$member = absel_ail_current_member();
+	if ( $member ) {
+		return 'm' . $member['id'];
+	}
+	return current_user_can( 'manage_options' ) ? 'u' . get_current_user_id() : '';
+}
+
+/**
+ * Name and email of the current member (or administrator), for submissions.
+ *
+ * @return array{name:string,email:string}
+ */
+function absel_ail_owner_contact() {
+	if ( absel_ail_current_member() ) {
+		$auth = SwpmAuth::get_instance();
+		return array(
+			'name'  => trim( $auth->get( 'first_name' ) . ' ' . $auth->get( 'last_name' ) ),
+			'email' => (string) $auth->get( 'email' ),
+		);
+	}
+	$user = wp_get_current_user();
+	return array(
+		'name'  => (string) $user->display_name,
+		'email' => (string) $user->user_email,
+	);
+}
+
+/*
+ * Request token for the submission API. Simple Membership members are often not
+ * WordPress users, so WordPress's REST nonce can't tell them apart; this token
+ * is signed for the member who loaded the page and expires after 12 hours.
+ */
+
+function absel_ail_submit_token() {
+	$owner   = absel_ail_current_owner();
+	$expires = time() + 12 * HOUR_IN_SECONDS;
+	return $owner . '.' . $expires . '.' . absel_ail_sign( 'submit.' . $owner . '.' . $expires );
+}
+
+function absel_ail_submit_token_ok( $token ) {
+	$parts = explode( '.', (string) $token );
+	if ( 3 !== count( $parts ) ) {
+		return false;
+	}
+	list( $owner, $expires, $signature ) = $parts;
+	return '' !== $owner
+		&& absel_ail_current_owner() === $owner
+		&& (int) $expires >= time()
+		&& hash_equals( absel_ail_sign( 'submit.' . $owner . '.' . $expires ), $signature );
+}
+
 /*
  * Student links. Students are not ABSEL members, so a member can hand a class
  * a link that opens one activity's simulation (not its instructor materials)

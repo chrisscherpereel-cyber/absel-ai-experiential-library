@@ -135,7 +135,16 @@ function absel_ail_file_error( $code ) {
 }
 
 function absel_ail_mime_type( $path ) {
-	$types = array(
+	$types = absel_ail_mime_types();
+	$ext   = strtolower( pathinfo( $path, PATHINFO_EXTENSION ) );
+	return isset( $types[ $ext ] ) ? $types[ $ext ] : null;
+}
+
+/**
+ * File types the library serves, by extension. Submissions accept only these.
+ */
+function absel_ail_mime_types() {
+	return array(
 		'html' => 'text/html; charset=utf-8',
 		'htm'  => 'text/html; charset=utf-8',
 		'css'  => 'text/css; charset=utf-8',
@@ -151,9 +160,8 @@ function absel_ail_mime_type( $path ) {
 		'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 		'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
 		'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+		'csv'  => 'text/csv; charset=utf-8',
 		'zip'  => 'application/zip',
 		'mp4'  => 'video/mp4',
 	);
-	$ext = strtolower( pathinfo( $path, PATHINFO_EXTENSION ) );
-	return isset( $types[ $ext ] ) ? $types[ $ext ] : null;
 }

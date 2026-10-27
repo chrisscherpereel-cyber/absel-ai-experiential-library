@@ -165,7 +165,7 @@ function absel_ail_activity_panel( $post_id ) {
 	}
 	$downloads = array();
 	foreach ( (array) scandir( $dir ) as $name ) {
-		if ( preg_match( '/^[^._].*\.(pdf|docx|pptx|xlsx|zip)$/i', $name ) && is_file( $dir . '/' . $name ) ) {
+		if ( preg_match( '/^[^._].*\.(pdf|docx|pptx|xlsx|csv|zip)$/i', $name ) && is_file( $dir . '/' . $name ) ) {
 			$downloads[] = sprintf( '<li><a href="%s">%s</a></li>', esc_url( absel_ail_file_url( $folder . '/' . $name ) ), esc_html( $name ) );
 		}
 	}

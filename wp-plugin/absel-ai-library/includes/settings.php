@@ -6,7 +6,10 @@
 defined( 'ABSPATH' ) || exit;
 
 function absel_ail_settings() {
-	return wp_parse_args( (array) get_option( 'absel_ail_settings', array() ), array( 'allowed_levels' => '' ) );
+	return wp_parse_args( (array) get_option( 'absel_ail_settings', array() ), array(
+		'allowed_levels' => '',
+		'editor_emails'  => '',
+	) );
 }
 
 /**
@@ -27,8 +30,10 @@ add_action( 'admin_init', function () {
 		'type'              => 'array',
 		'sanitize_callback' => function ( $input ) {
 			$input = (array) $input;
+			$emails = array_filter( array_map( 'sanitize_email', explode( ',', isset( $input['editor_emails'] ) ? (string) $input['editor_emails'] : '' ) ) );
 			return array(
 				'allowed_levels' => implode( ',', absel_ail_parse_levels( isset( $input['allowed_levels'] ) ? $input['allowed_levels'] : '' ) ),
+				'editor_emails'  => implode( ', ', $emails ),
 			);
 		},
 	) );
@@ -54,6 +59,18 @@ function absel_ail_settings_page() {
 		<ul>
 			<li><?php echo class_exists( 'SwpmAuth' ) ? '✅ ' . esc_html__( 'Simple Membership is active.', 'absel-ai-library' ) : '❌ ' . esc_html__( 'Simple Membership is not active.', 'absel-ai-library' ); ?></li>
 			<li><?php echo is_dir( ABSEL_AIL_CONTENT_DIR ) ? '✅ ' : '❌ '; ?><?php esc_html_e( 'Activity folder location:', 'absel-ai-library' ); ?> <code><?php echo esc_html( ABSEL_AIL_CONTENT_DIR ); ?></code></li>
+			<li><?php
+				$submit_page = get_option( 'absel_ail_submit_page' );
+				if ( $submit_page ) {
+					echo '✅ ' . esc_html__( 'Submission page:', 'absel-ai-library' ) . ' <a href="' . esc_url( $submit_page ) . '">' . esc_html( $submit_page ) . '</a>';
+				} else {
+					echo '❌ ' . esc_html__( 'No submission page yet. Add the shortcode [absel_submit_exercise] to a page and view it once.', 'absel-ai-library' );
+				}
+			?></li>
+			<li><?php
+				/* translators: %s: file size */
+				echo 'ℹ️ ' . esc_html( sprintf( __( 'Largest file members can upload: %s (raise PHP\'s upload_max_filesize and post_max_size to allow up to 100 MB).', 'absel-ai-library' ), size_format( absel_ail_max_upload() ) ) );
+			?></li>
 		</ul>
 
 		<form method="post" action="options.php">
@@ -67,6 +84,13 @@ function absel_ail_settings_page() {
 						<?php foreach ( $levels as $level ) : ?>
 							<br><code><?php echo (int) $level->id; ?></code> <?php echo esc_html( $level->alias ); ?>
 						<?php endforeach; ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="ail-editors"><?php esc_html_e( 'Notify editors at', 'absel-ai-library' ); ?></label></th>
+					<td>
+						<input id="ail-editors" class="regular-text" name="absel_ail_settings[editor_emails]" value="<?php echo esc_attr( $s['editor_emails'] ); ?>" placeholder="<?php echo esc_attr( get_option( 'admin_email' ) ); ?>">
+						<p class="description"><?php esc_html_e( 'Comma-separated addresses that get an email for each new exercise submission. Leave empty to use the site admin address.', 'absel-ai-library' ); ?></p>
 					</td>
 				</tr>
 			</table>
