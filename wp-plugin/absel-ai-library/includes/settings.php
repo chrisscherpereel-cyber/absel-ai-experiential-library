@@ -67,6 +67,7 @@ function absel_ail_settings_page() {
 					echo '❌ ' . esc_html__( 'No submission page yet. Add the shortcode [absel_submit_exercise] to a page and view it once.', 'absel-ai-library' );
 				}
 			?></li>
+			<li><?php echo wp_kses_post( absel_ail_update_status_html() ); ?></li>
 			<li><?php
 				/* translators: %s: file size */
 				echo 'ℹ️ ' . esc_html( sprintf( __( 'Largest file members can upload: %s (raise PHP\'s upload_max_filesize and post_max_size to allow up to 100 MB).', 'absel-ai-library' ), size_format( absel_ail_max_upload() ) ) );

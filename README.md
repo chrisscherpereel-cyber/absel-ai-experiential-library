@@ -8,6 +8,7 @@ activities/              one folder per activity (see activities/_template/READM
 schema/                  indexing rules: exercise.schema.json + INDEXING-RULES.md
 author-kit/
   author-prompt.md       prompt authors run in their own AI assistant to draft a manifest
+.github/workflows/release.yml  publishes the plugin as a GitHub release when a version tag is pushed
 tools/
   check_library.py       validates manifests and packages; keeps rules, prompt and plugin copies in sync
   build_form.py          copies the schema and prompt into the plugin (run after changing either)
@@ -42,7 +43,7 @@ Simulations are self-contained web pages that run in the browser. Nothing calls 
 
 Use Bluehost's staging tool (in the Bluehost dashboard, or the Bluehost plugin inside WordPress) to make a copy of the site, and do everything below there first.
 
-1. **Install the plugin.** Download `absel-ai-library.zip` (or zip the `wp-plugin/absel-ai-library` folder). Go to **Plugins → Add New Plugin → Upload Plugin**, install it and activate it.
+1. **Install the plugin (once).** Download `absel-ai-library.zip` from the repository's [latest release](../../releases/latest). Go to **Plugins → Add New Plugin → Upload Plugin**, install it and activate it. After this, updates come through **Dashboard → Updates** (see [Updating the plugin](#updating-the-plugin)).
 2. **Keep files outside the web root (recommended).** Bluehost serves some static files through a cache layer that may not honor `.htaccess`. Create a folder next to `public_html` (for example `/home/<account>/absel-ai-library`) and add this to `wp-config.php`, above the "That's all, stop editing" line:
    ```php
    define( 'ABSEL_AIL_CONTENT_DIR', '/home/<account>/absel-ai-library' );
@@ -55,6 +56,38 @@ Use Bluehost's staging tool (in the Bluehost dashboard, or the Bluehost plugin i
 7. **Upload an activity** (or submit it through the new page). Copy `activities/negotiation-supplier/` into the library directory (SFTP or File Manager). Export `facilitator-guide.md` to PDF first and upload the PDF; `.md` files are not served.
 8. **Create the Activity entry** (accepting a submission does this for you). Go to **AI Activities → Add New**, fill in the description from `manifest.json`, and set **Activity folder** to `negotiation-supplier`. Optionally tick the Simple Membership protection box to hide the description itself from non-members.
 9. **Flush permalinks** if `/ail-files/` or `/ail-submit/` return "not found": **Settings → Permalinks → Save Changes**.
+
+## Updating the plugin
+
+The site updates the plugin from this repository's GitHub releases, through **Dashboard → Updates**, like any other plugin. No zip uploads are needed after the first install.
+
+**One-time setup on each site** (staging and live). The repository is private, so the site needs a read-only access token:
+
+1. On GitHub, go to **your profile picture → Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token**.
+2. Name it, for example "absel.org plugin updates", and pick an expiration date (one year is sensible; set a reminder).
+3. Under **Repository access**, choose **Only select repositories** and pick `absel-ai-experiential-library`.
+4. Under **Permissions → Repository permissions**, set **Contents** to **Read-only**. Leave everything else as is.
+5. Generate the token and copy it.
+6. Add this line to the site's `wp-config.php` (Bluehost File Manager), above "That's all, stop editing":
+   ```php
+   define( 'ABSEL_AIL_GITHUB_TOKEN', 'github_pat_…' );
+   ```
+7. Open **Settings → AI Library**. The updates line should say "Up to date" or offer a new version. If it shows an error, it explains what's wrong, for example a mistyped or expired token.
+
+The token can only read this one repository. Keep it in `wp-config.php` only, never in the code or on GitHub. When it expires, generate a new one and replace the line.
+
+**Publishing a new version:**
+
+1. Change the version in both places at the top of `wp-plugin/absel-ai-library/absel-ai-library.php`: the `Version:` line and `ABSEL_AIL_VERSION`. Use a higher number, for example `0.5.0`.
+2. Commit, then push the commit and a matching tag:
+   ```
+   git tag v0.5.0
+   git push origin main v0.5.0
+   ```
+3. GitHub Actions (`.github/workflows/release.yml`) checks the library, builds `absel-ai-library.zip` and publishes the release. Follow it under the repository's **Actions** tab. It refuses to publish if the tag and the version in the file don't match.
+4. The site notices within six hours. To check straight away, use **Check for updates now** on **Settings → AI Library**. Then update from **Dashboard → Updates**. Test on staging first.
+
+To roll back, download an earlier release's zip and upload it with **Plugins → Add New Plugin → Upload Plugin → Replace current with uploaded**.
 
 ## Test checklist
 

@@ -1,0 +1,54 @@
+# Publishes the WordPress plugin as a GitHub release when a version tag is pushed.
+# The site's plugin checks the latest release and offers it under Dashboard > Updates.
+#
+# To release: set the same version in both places in
+# wp-plugin/absel-ai-library/absel-ai-library.php (the "Version:" header and
+# ABSEL_AIL_VERSION), commit, then push a matching tag:
+#   git tag v0.5.0
+#   git push origin main v0.5.0
+
+name: Release plugin
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the plugin version matches the tag
+        run: |
+          file=wp-plugin/absel-ai-library/absel-ai-library.php
+          tag="${GITHUB_REF_NAME#v}"
+          header=$(grep -m1 -oP '^\s*\*\s*Version:\s*\K\S+' "$file")
+          constant=$(grep -m1 -oP "define\( 'ABSEL_AIL_VERSION', '\K[^']+" "$file")
+          echo "tag $tag, header $header, constant $constant"
+          if [ "$tag" != "$header" ] || [ "$tag" != "$constant" ]; then
+            echo "::error::Set Version and ABSEL_AIL_VERSION in $file to $tag before tagging."
+            exit 1
+          fi
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Check the library
+        run: |
+          pip install jsonschema
+          python tools/check_library.py
+
+      - name: Build the plugin zip
+        run: |
+          mkdir -p dist
+          git archive --format=zip --prefix=absel-ai-library/ -o dist/absel-ai-library.zip HEAD:wp-plugin/absel-ai-library
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/absel-ai-library.zip --title "Plugin $GITHUB_REF_NAME" --generate-notes
