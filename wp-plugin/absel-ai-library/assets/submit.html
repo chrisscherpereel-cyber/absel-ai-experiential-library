@@ -138,7 +138,8 @@
         <li>Give it whatever you have: a few sentences describing your idea, a manuscript, PowerPoint slides, handouts, spreadsheets, or a link such as a GitHub repository. If it can't open a file, export it to PDF or paste the text.</li>
         <li><button type="button" data-action="copy-prompt">Copy the ABSEL prompt</button> <span id="copy-status" class="small muted" role="status"></span><br>Paste it into the chat and send it.
           <details><summary class="small">Show the prompt</summary><pre class="prompt" id="prompt-view"></pre></details></li>
-        <li>It replies with a short review and a draft of all the details, including a list of anything it had to guess.</li>
+        <li>It replies with a short review and a draft of all the details, including a list of anything it had to guess.<br>
+          <span class="small">If it asks you questions instead, reply: “Please don't ask questions. Make your best judgment, list what you assumed, and give me the review and the manifest.” <button type="button" class="link" data-action="copy-noq">Copy this reply</button> <span id="noq-status" class="muted" role="status"></span></span></li>
       </ol>
       <p class="small muted">Check your school's AI policy, and remove student names, grades and identifiable student work from your files first. Not using AI? <button type="button" class="link" data-action="blank">Fill in the form yourself</button>.</p>
     </section>
@@ -429,7 +430,7 @@ You are helping a university business instructor submit an experiential exercise
 The instructor has given you whatever they have: possibly just a short description, possibly a full manuscript, possibly many files such as instructor notes, PowerPoint slides (read the slide text and the speaker notes), handouts, spreadsheets, or links. Your job is to describe the exercise for the library's catalog, accurately and completely, from that material alone.
 
 HOW TO WORK
-- Do not ask the instructor questions. Work from what you have, in a single reply.
+- Never ask the instructor questions, not even to clarify, and never reply with only questions or a plan. However little material there is, use your best judgment, list what you assumed, and give the full review and manifest in a single reply.
 - Fill in every field the material supports. Leave out any field it doesn't support; the library accepts incomplete entries.
 - Every value you include is either STATED (said outright in the material) or ASSUMED (your inference). For every assumed value, add an entry to "assumptions" giving the field and a short reason, for example {"field": "levels", "basis": "Slides 3 and 14 refer to MBA students"}. The instructor will confirm or correct each one, so list every inference, and only inferences.
 - Never invent facts that nothing in the material supports, such as how many times it has been used, evidence of effectiveness, publications, or author details.
@@ -1566,6 +1567,7 @@ Begin now.
     const el = ev.target.closest('[data-action]'); if (!el) return;
     const a = el.dataset.action, path = el.dataset.path, i = +el.dataset.index;
     if (a === 'copy-prompt') return copy(PROMPT, $('#copy-status'));
+    if (a === 'copy-noq') return copy("Please don't ask questions. Make your best judgment, list what you assumed, and give me the review and the manifest.", $('#noq-status'));
     if (a === 'copy-fix') return copy('Please give me the manifest again as valid JSON in one code block.', null);
     if (a === 'import') return importText($('#paste').value, "your assistant's reply");
     if (a === 'revise') return revise(+el.dataset.id);
