@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       ABSEL AI Experiential Library
  * Description:       Members-only library of experiential learning activities and simulations, gated by Simple Membership, with member submissions and an editor review queue.
- * Version:           0.4.1
+ * Version:           0.4.2
  * Requires PHP:      7.4
  * Requires at least: 6.0
  * Author:            ABSEL
@@ -14,7 +14,7 @@
 defined( 'ABSPATH' ) || exit;
 
 // Keep in step with "Version" above; a release is published by pushing the tag v<version>.
-define( 'ABSEL_AIL_VERSION', '0.4.1' );
+define( 'ABSEL_AIL_VERSION', '0.4.2' );
 define( 'ABSEL_AIL_FILE', __FILE__ );
 define( 'ABSEL_AIL_DIR', plugin_dir_path( __FILE__ ) );
 
