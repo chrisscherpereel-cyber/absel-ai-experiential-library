@@ -47,7 +47,7 @@ Simulations are self-contained web pages that run in the browser. Nothing calls 
 To try the plugin without touching absel.org, get the one-click test page, `playground.html`, in any of these ways:
 
 - **From a release:** each [release](../../releases/latest) has `playground.html` next to `absel-ai-library.zip`, built from that version.
-- **From the latest code:** on the **Actions** tab, choose **Build Playground link → Run workflow**. When the run finishes (about a minute), open it and download **playground** under *Artifacts*. GitHub delivers it zipped; unzip it to get the page. Downloads are kept for 30 days.
+- **From the latest code:** on the **Actions** tab, choose **Build Playground link → Run workflow**. When the run finishes (about a minute), open it and download **playground.html** under *Artifacts*. Downloads are kept for 30 days.
 - **On your computer:** `py tools/build_playground.py` writes `dist/playground.html`.
 
 Open `playground.html` and click **Open the test site**. A temporary WordPress site starts in the browser (WordPress Playground) with Simple Membership, this plugin, a membership level, an active test member, the *Submit an exercise* page and pretty permalinks. It opens on the submission page, logged in as the administrator (`admin` / `password`). The test member's login is in `TEST_MEMBER` at the top of `tools/build_playground.py`, and `dist/playground.html` shows it with the steps for testing as a member. These accounts exist only inside Playground.
