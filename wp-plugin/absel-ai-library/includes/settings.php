@@ -1,6 +1,6 @@
 <?php
 /**
- * Settings > AI Library: setup status and which membership levels get in.
+ * Settings > SELAR: setup status and which membership levels get in.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -40,7 +40,7 @@ add_action( 'admin_init', function () {
 } );
 
 add_action( 'admin_menu', function () {
-	add_options_page( __( 'AI Library', 'absel-ai-library' ), __( 'AI Library', 'absel-ai-library' ), 'manage_options', 'absel-ail', 'absel_ail_settings_page' );
+	add_options_page( __( 'SELAR Settings', 'absel-ai-library' ), __( 'SELAR', 'absel-ai-library' ), 'manage_options', 'absel-ail', 'absel_ail_settings_page' );
 } );
 
 function absel_ail_settings_page() {
@@ -53,7 +53,7 @@ function absel_ail_settings_page() {
 	}
 	?>
 	<div class="wrap">
-		<h1><?php esc_html_e( 'ABSEL AI Library', 'absel-ai-library' ); ?></h1>
+		<h1><?php esc_html_e( 'SELAR: Simulation & Experiential Learning Activities Repository', 'absel-ai-library' ); ?></h1>
 
 		<h2><?php esc_html_e( 'Status', 'absel-ai-library' ); ?></h2>
 		<ul>

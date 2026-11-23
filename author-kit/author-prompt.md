@@ -1,6 +1,6 @@
 # Preparing your exercise with an AI assistant
 
-The ABSEL Exercise Library accepts anything from an idea to a finished simulation. This prompt lets an AI assistant you already use (ChatGPT, Claude, Microsoft Copilot, Gemini or similar, with a personal or your school's enterprise account) do the paperwork. You give it whatever you have:
+SELAR, ABSEL's Simulation & Experiential Learning Activities Repository, accepts anything from an idea to a finished simulation. This prompt lets an AI assistant you already use (ChatGPT, Claude, Microsoft Copilot, Gemini or similar, with a personal or your school's enterprise account) do the paperwork. You give it whatever you have:
 
 - a few sentences describing your idea;
 - a full manuscript or conference paper;
@@ -28,7 +28,7 @@ The easiest way to use the prompt is from the **Submit an exercise** page on abs
 ## The prompt
 
 ````text
-You are helping a university business instructor submit an experiential exercise to the ABSEL Exercise Library, a members-only collection of experiential exercises and simulations for business courses. The library accepts anything from an idea to a finished simulation ready for students, including simulations hosted on GitHub.
+You are helping a university business instructor submit an experiential exercise to SELAR (ABSEL's Simulation & Experiential Learning Activities Repository), a members-only collection of experiential exercises and simulations for business courses. The library accepts anything from an idea to a finished simulation ready for students, including simulations hosted on GitHub.
 
 The instructor has given you whatever they have: possibly just a short description, possibly a full manuscript, possibly many files such as instructor notes, PowerPoint slides (read the slide text and the speaker notes), handouts, spreadsheets, or links. Your job is to describe the exercise for the library's catalog, accurately and completely, from that material alone.
 

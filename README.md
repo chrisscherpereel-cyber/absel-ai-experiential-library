@@ -1,6 +1,6 @@
-# ABSEL Experiential Library
+# SELAR: Simulation & Experiential Learning Activities Repository
 
-Source for ABSEL's members-only library of experiential exercises and simulations for business courses, served from absel.org behind the existing Simple Membership paywall, with member submissions and editor review.
+Source for SELAR, ABSEL's members-only repository of simulations and experiential learning activities for business courses, served from absel.org behind the existing Simple Membership paywall, with member submissions and editor review.
 
 ```
 activities/              one folder per activity (see activities/_template/README.md)
@@ -31,11 +31,11 @@ Simulations are self-contained web pages that run in the browser. Nothing calls 
 
 ## What the plugin does
 
-- **AI Activities** post type (`/ai-activities/`) with AI Topic, Format and Discipline filters, plus duration and group-size fields.
+- **SELAR** activities (the **SELAR** admin menu; pages at `/ai-activities/`) with AI Topic, Format and Discipline filters, plus duration and group-size fields.
 - **Protected files.** Activity folders live in a directory the web server will not serve directly. Members reach them through `/ail-files/<folder>/…`, which checks Simple Membership first. Expired and inactive accounts are refused.
 - **Student links.** Each activity page gives members a link to post in their LMS. It opens only the simulation (not instructor materials) for 14 days, needs no student account, and stops working if the member's account lapses.
 - **Member submissions.** The `[absel_submit_exercise]` shortcode puts the submission page on any WordPress page. Anything from an idea to a finished simulation (including one on GitHub) is welcome. Members give their own AI assistant whatever they have (a description, a manuscript, slides or files) along with the built-in prompt, and paste its reply into the page. The assistant fills in everything it can and lists what it had to guess. **Confirming or correcting those guesses is the only thing the author has to do**; every other field is optional, and listed files that aren't attached don't block a submission. Files upload one at a time with progress, so large packages stay under PHP's request limits. The server checks every manifest against the schema again. Members see their submissions' status and editors' messages on the same page, and can revise a returned submission without re-uploading unchanged files.
-- **Review queue.** **AI Activities → Submissions** lists submissions by status, with a count of those waiting. Each one shows its details (including its stage and the assistant's guesses the author checked), automatic checks (files listed but not received, possible student information, third-party material needing permission, web files that will run on the site, folder name clashes) and its files, which always download rather than open. Editors can:
+- **Review queue.** **SELAR → Submissions** lists submissions by status, with a count of those waiting. Each one shows its details (including its stage and the assistant's guesses the author checked), automatic checks (files listed but not received, possible student information, third-party material needing permission, web files that will run on the site, folder name clashes) and its files, which always download rather than open. Editors can:
   - **Accept.** The files and `manifest.json` are copied into the library and a *draft* activity is created for the editor to check and publish. A revision of an accepted exercise updates its files instead.
   - **Return for changes**, with a message.
   - **Decline**, with a message.
@@ -64,12 +64,12 @@ Use Bluehost's staging tool (in the Bluehost dashboard, or the Bluehost plugin i
    define( 'ABSEL_AIL_CONTENT_DIR', '/home/<account>/absel-ai-library' );
    ```
    Without this line, the plugin uses `wp-content/absel-ai-library` and blocks direct access with `.htaccess`.
-3. **Configure** under **Settings → AI Library**: check the status items, choose the membership levels allowed in (leave empty for all active members), and enter the editors' email addresses for new submissions.
+3. **Configure** under **Settings → SELAR**: check the status items, choose the membership levels allowed in (leave empty for all active members), and enter the editors' email addresses for new submissions.
 4. **Create the submission page.** Add a page (for example "Submit an exercise") containing the shortcode `[absel_submit_exercise]`, publish it and view it once so the plugin records its address for emails. Link to it from the members' menu.
 5. **Allow large enough uploads.** The status list shows the largest file members can upload. Bluehost's default is often too small for videos and slide decks: in **cPanel → MultiPHP INI Editor**, set `upload_max_filesize` to `100M` and `post_max_size` to `110M`.
-6. **Editors** need the WordPress Editor (or Administrator) role to see **AI Activities → Submissions**.
+6. **Editors** need the WordPress Editor (or Administrator) role to see **SELAR → Submissions**.
 7. **Upload an activity** (or submit it through the new page). Copy `activities/negotiation-supplier/` into the library directory (SFTP or File Manager). Export `facilitator-guide.md` to PDF first and upload the PDF; `.md` files are not served.
-8. **Create the Activity entry** (accepting a submission does this for you). Go to **AI Activities → Add New**, fill in the description from `manifest.json`, and set **Activity folder** to `negotiation-supplier`. Optionally tick the Simple Membership protection box to hide the description itself from non-members.
+8. **Create the Activity entry** (accepting a submission does this for you). Go to **SELAR → Add New Activity**, fill in the description from `manifest.json`, and set **Activity folder** to `negotiation-supplier`. Optionally tick the Simple Membership protection box to hide the description itself from non-members.
 9. **Flush permalinks** if `/ail-files/` or `/ail-submit/` return "not found": **Settings → Permalinks → Save Changes**.
 
 ## Updating the plugin
@@ -87,7 +87,7 @@ The site updates the plugin from this repository's GitHub releases, through **Da
    ```php
    define( 'ABSEL_AIL_GITHUB_TOKEN', 'github_pat_…' );
    ```
-7. Open **Settings → AI Library**. The updates line should say "Up to date" or offer a new version. If it shows an error, it explains what's wrong, for example a mistyped or expired token.
+7. Open **Settings → SELAR**. The updates line should say "Up to date" or offer a new version. If it shows an error, it explains what's wrong, for example a mistyped or expired token.
 
 The token can only read this one repository. Keep it in `wp-config.php` only, never in the code or on GitHub. When it expires, generate a new one and replace the line.
 
@@ -100,7 +100,7 @@ The token can only read this one repository. Keep it in `wp-config.php` only, ne
    git push origin main v0.5.0
    ```
 3. GitHub Actions (`.github/workflows/release.yml`) checks the library, builds `absel-ai-library.zip` and publishes the release. Follow it under the repository's **Actions** tab. It refuses to publish if the tag and the version in the file don't match.
-4. The site notices within six hours. To check straight away, use **Check for updates now** on **Settings → AI Library**. Then update from **Dashboard → Updates**. Test on staging first.
+4. The site notices within six hours. To check straight away, use **Check for updates now** on **Settings → SELAR**. Then update from **Dashboard → Updates**. Test on staging first.
 
 To roll back, download an earlier release's zip and upload it with **Plugins → Add New Plugin → Upload Plugin → Replace current with uploaded**.
 
@@ -113,7 +113,7 @@ To roll back, download an earlier release's zip and upload it with **Plugins →
 - [ ] Student link in a private window (not logged in): the simulation works, and the facilitator PDF URL returns 403.
 - [ ] If a caching plugin is active (Bluehost's included), check that a logged-out visitor never sees a member's view of an activity page or the submission page.
 - [ ] Submission page logged out: "Log in or become a member". As a member: the form appears inside the page, and **Your submissions** appears after a first submission.
-- [ ] Submit a small test exercise as a member: a confirmation email arrives, the editors' address gets a notification, and it appears under **AI Activities → Submissions**.
+- [ ] Submit a small test exercise as a member: a confirmation email arrives, the editors' address gets a notification, and it appears under **SELAR → Submissions**.
 - [ ] Return it with a message: the member sees the message on the submission page and can revise it, keeping unchanged files.
 - [ ] Accept the revision: a draft activity appears with the files in place. Publish it and check that members can download the files.
 - [ ] Try a file larger than the upload limit: the form says it's too large before uploading.

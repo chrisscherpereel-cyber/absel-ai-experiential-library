@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name:       ABSEL AI Experiential Library
- * Description:       Members-only library of experiential learning activities and simulations, gated by Simple Membership, with member submissions and an editor review queue.
- * Version:           0.4.2
+ * Plugin Name:       SELAR: Simulation & Experiential Learning Activities Repository
+ * Description:       ABSEL's members-only Simulation & Experiential Learning Activities Repository (SELAR), gated by Simple Membership, with member submissions and an editor review queue.
+ * Version:           0.4.3
  * Requires PHP:      7.4
  * Requires at least: 6.0
  * Author:            ABSEL
@@ -14,7 +14,7 @@
 defined( 'ABSPATH' ) || exit;
 
 // Keep in step with "Version" above; a release is published by pushing the tag v<version>.
-define( 'ABSEL_AIL_VERSION', '0.4.2' );
+define( 'ABSEL_AIL_VERSION', '0.4.3' );
 define( 'ABSEL_AIL_FILE', __FILE__ );
 define( 'ABSEL_AIL_DIR', plugin_dir_path( __FILE__ ) );
 
@@ -67,7 +67,7 @@ add_action( 'init', function () {
 add_action( 'admin_notices', function () {
 	if ( ! class_exists( 'SwpmAuth' ) && current_user_can( 'activate_plugins' ) ) {
 		echo '<div class="notice notice-error"><p>';
-		esc_html_e( 'ABSEL AI Library needs the Simple Membership plugin to be active. Until it is, only administrators can open activities.', 'absel-ai-library' );
+		esc_html_e( 'SELAR needs the Simple Membership plugin to be active. Until it is, only administrators can open activities.', 'absel-ai-library' );
 		echo '</p></div>';
 	}
 } );

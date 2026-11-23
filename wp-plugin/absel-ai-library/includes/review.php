@@ -1,10 +1,10 @@
 <?php
 /**
- * The editors' review queue: AI Activities > Submissions.
+ * The editors' review queue: SELAR > Submissions.
  *
  * Editors (anyone who can edit others' posts) see each submission's details,
  * download its files, and accept, return or decline it. Accepting copies the
- * files into the library and creates a draft AI Activity, or updates the
+ * files into the library and creates a draft activity, or updates the
  * existing activity when the submission revises an accepted exercise.
  */
 
@@ -564,7 +564,7 @@ function absel_ail_notify_decision( $id ) {
 	$message = (string) get_post_meta( $id, '_absel_sub_message', true );
 	$intro   = array(
 		/* translators: %s: exercise title */
-		'accepted' => __( 'Good news: "%s" has been accepted for the ABSEL Exercise Library. The editors will let you know when it is published.', 'absel-ai-library' ),
+		'accepted' => __( 'Good news: "%s" has been accepted for SELAR, ABSEL\'s Simulation & Experiential Learning Activities Repository. The editors will let you know when it is published.', 'absel-ai-library' ),
 		/* translators: %s: exercise title */
 		'returned' => __( 'The editors have reviewed "%s" and are asking for some changes before it can be accepted. You can revise and resubmit it from the submission page; files you don\'t change are kept.', 'absel-ai-library' ),
 		/* translators: %s: exercise title */

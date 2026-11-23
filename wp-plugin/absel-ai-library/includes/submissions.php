@@ -504,7 +504,7 @@ function absel_ail_notify_submitted( $id ) {
 			sprintf( __( 'We received your exercise: %s', 'absel-ai-library' ), $title ),
 			sprintf(
 				/* translators: 1: name, 2: title, 3: reference number, 4: submission page */
-				__( "Hello %1\$s,\n\nThank you for submitting \"%2\$s\" to the ABSEL Exercise Library (reference #%3\$d). The editors will review it and email you.\n\nYou can see its status at any time on the submission page:\n%4\$s", 'absel-ai-library' ),
+				__( "Hello %1\$s,\n\nThank you for submitting \"%2\$s\" to SELAR, ABSEL's Simulation & Experiential Learning Activities Repository (reference #%3\$d). The editors will review it and email you.\n\nYou can see its status at any time on the submission page:\n%4\$s", 'absel-ai-library' ),
 				$name ? $name : __( 'there', 'absel-ai-library' ),
 				$title,
 				$id,

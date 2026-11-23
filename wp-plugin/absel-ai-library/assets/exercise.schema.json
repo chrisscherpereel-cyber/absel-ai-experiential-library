@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://absel.org/schema/exercise/1.0/manifest.schema.json",
-  "title": "ABSEL Exercise Library manifest",
+  "title": "SELAR activity manifest",
   "description": "Indexing information for one exercise, from an idea to a finished simulation. Saved as manifest.json in the exercise's folder. Only the title is required; everything else is filled in when known. Field rules and definitions of every allowed value are in schema/INDEXING-RULES.md.",
   "type": "object",
   "additionalProperties": false,

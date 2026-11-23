@@ -128,7 +128,7 @@ add_filter( 'plugins_api', function ( $result, $action, $args ) {
 		return $result;
 	}
 	return (object) array(
-		'name'          => 'ABSEL AI Experiential Library',
+		'name'          => 'SELAR: Simulation & Experiential Learning Activities Repository',
 		'slug'          => 'absel-ai-library',
 		'version'       => $release['version'],
 		'author'        => 'ABSEL',
@@ -178,7 +178,7 @@ add_action( 'upgrader_process_complete', function () {
 	delete_site_transient( 'absel_ail_release' );
 } );
 
-// Settings > AI Library > "Check for updates now".
+// Settings > SELAR > "Check for updates now".
 add_action( 'admin_post_absel_ail_check_updates', function () {
 	check_admin_referer( 'absel_ail_check_updates' );
 	if ( ! current_user_can( 'update_plugins' ) ) {

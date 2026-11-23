@@ -130,14 +130,14 @@ def blueprint():
         "features": {"networking": True},
         "steps": [
             {"step": "login", "username": "admin", "password": "password"},
-            {"step": "setSiteOptions", "options": {"blogname": "ABSEL Library (Playground test)"}},
+            {"step": "setSiteOptions", "options": {"blogname": "SELAR (Playground test)"}},
             {"step": "installPlugin", "pluginData": {"resource": "wordpress.org/plugins", "slug": "simple-membership"},
              "options": {"activate": True}},
             {"step": "runPHP", "code": "<?php file_put_contents( '/tmp/absel-ai-library.zip', base64_decode( '"
              + zip_b64 + "' ) );"},
             {"step": "unzip", "zipFile": {"resource": "vfs", "path": "/tmp/absel-ai-library.zip"},
              "extractToPath": "/wordpress/wp-content/plugins"},
-            {"step": "activatePlugin", "pluginName": "ABSEL AI Experiential Library",
+            {"step": "activatePlugin", "pluginName": "SELAR",
              "pluginPath": "absel-ai-library/absel-ai-library.php"},
             {"step": "runPHP", "code": setup},
         ],
@@ -152,12 +152,12 @@ def main():
     version = re.search(r"define\( 'ABSEL_AIL_VERSION', '([^']+)'", (PLUGIN / "absel-ai-library.php").read_text(encoding="utf-8")).group(1)
     page = f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ABSEL Playground</title>
+<title>SELAR Playground</title>
 <style>body{{font:16px/1.5 system-ui,sans-serif;max-width:680px;margin:40px auto;padding:0 16px;color:#1d2327;background:#fff}}
 a.go{{display:inline-block;background:#2271b1;color:#fff;padding:10px 18px;border-radius:4px;text-decoration:none;font-weight:600}}
 code{{background:#f0f0f1;padding:1px 4px;border-radius:3px}}</style></head>
 <body>
-<h1>Try the ABSEL plugin in WordPress Playground</h1>
+<h1>Try SELAR in WordPress Playground</h1>
 <p>Plugin version {version}.</p>
 <p><a class="go" href="{link}" target="_blank" rel="noopener">Open the test site</a></p>
 <p>A temporary WordPress site starts in your browser (about a minute) with Simple Membership, this plugin,
@@ -170,7 +170,7 @@ Nothing is sent to absel.org, and the site disappears when you close or reload t
 (a test account that exists only in Playground).</li>
 <li>Open <code>/{SUBMIT_SLUG}/</code> and submit an exercise.</li>
 <li>Log back in as the administrator at <code>/wp-login.php</code> (<code>admin</code> / <code>password</code>) and review it under
-<strong>AI Activities → Submissions</strong>. Emails aren't sent in Playground.</li>
+<strong>SELAR → Submissions</strong>. Emails aren't sent in Playground.</li>
 </ol>
 <p><small>Built from wp-plugin/absel-ai-library by tools/build_playground.py. Get a current copy from the latest release or the Actions tab (Build Playground link), or rebuild it after changing the plugin.</small></p>
 </body></html>

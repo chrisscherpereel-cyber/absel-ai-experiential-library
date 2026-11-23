@@ -1,6 +1,6 @@
 <?php
 /**
- * The "AI Activity" post type, its taxonomies and details box, and the
+ * The SELAR activity post type, its taxonomies and details box, and the
  * launch/download panel shown on each activity page.
  */
 
@@ -11,10 +11,12 @@ add_action( 'init', 'absel_ail_register_types' );
 function absel_ail_register_types() {
 	register_post_type( 'absel_activity', array(
 		'labels'       => array(
-			'name'          => __( 'AI Activities', 'absel-ai-library' ),
-			'singular_name' => __( 'AI Activity', 'absel-ai-library' ),
-			'add_new_item'  => __( 'Add New AI Activity', 'absel-ai-library' ),
-			'edit_item'     => __( 'Edit AI Activity', 'absel-ai-library' ),
+			'name'          => __( 'SELAR Activities', 'absel-ai-library' ),
+			'menu_name'     => __( 'SELAR', 'absel-ai-library' ),
+			'singular_name' => __( 'Activity', 'absel-ai-library' ),
+			'add_new_item'  => __( 'Add New Activity', 'absel-ai-library' ),
+			'edit_item'     => __( 'Edit Activity', 'absel-ai-library' ),
+			'all_items'     => __( 'All Activities', 'absel-ai-library' ),
 		),
 		'public'       => true,
 		'has_archive'  => true,
