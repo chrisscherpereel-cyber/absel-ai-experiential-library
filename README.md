@@ -12,6 +12,7 @@ author-kit/
 tools/
   check_library.py       validates manifests and packages; keeps rules, prompt and plugin copies in sync
   build_form.py          copies the schema and prompt into the plugin (run after changing either)
+  build_playground.py    builds dist/playground.html, a one-click test site in WordPress Playground
 wp-plugin/
   absel-ai-library/      WordPress plugin that publishes and protects the library
     assets/submit.html   submission page: copy the prompt, paste the AI's reply, edit, submit
@@ -38,6 +39,18 @@ Simulations are self-contained web pages that run in the browser. Nothing calls 
   - **Decline**, with a message.
 
   Editors and authors are emailed at each step. Unfinished uploads are deleted after two days. Submitted files are kept under `_submissions/` in the library directory, which is never served.
+
+## Trying it in WordPress Playground
+
+To try the plugin without touching absel.org, build a one-click test site:
+
+```
+py tools/build_playground.py
+```
+
+Open `dist/playground.html` and click **Open the test site**. A temporary WordPress site starts in the browser (WordPress Playground) with Simple Membership, this plugin, a membership level, an active test member, the *Submit an exercise* page and pretty permalinks. It opens on the submission page, logged in as the administrator (`admin` / `password`). The test member's login is in `TEST_MEMBER` at the top of `tools/build_playground.py`, and `dist/playground.html` shows it with the steps for testing as a member. These accounts exist only inside Playground.
+
+The plugin is built from the working copy and carried inside the link, because Playground can't download from this private repository. The part of a link after `#` isn't sent to any server. Rebuild after changing the plugin. The site is thrown away when the tab is closed or reloaded, and Playground doesn't send emails.
 
 ## Setup (staging copy first)
 
