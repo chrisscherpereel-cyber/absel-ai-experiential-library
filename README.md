@@ -8,7 +8,9 @@ activities/              one folder per activity (see activities/_template/READM
 schema/                  indexing rules: exercise.schema.json + INDEXING-RULES.md
 author-kit/
   author-prompt.md       prompt authors run in their own AI assistant to draft a manifest
-.github/workflows/release.yml  publishes the plugin as a GitHub release when a version tag is pushed
+.github/workflows/
+  release.yml            publishes the plugin (and its Playground test page) as a GitHub release when a version tag is pushed
+  playground.yml         builds the Playground test page on demand (Actions tab)
 tools/
   check_library.py       validates manifests and packages; keeps rules, prompt and plugin copies in sync
   build_form.py          copies the schema and prompt into the plugin (run after changing either)
@@ -42,15 +44,15 @@ Simulations are self-contained web pages that run in the browser. Nothing calls 
 
 ## Trying it in WordPress Playground
 
-To try the plugin without touching absel.org, build a one-click test site:
+To try the plugin without touching absel.org, get the one-click test page, `playground.html`, in any of these ways:
 
-```
-py tools/build_playground.py
-```
+- **From a release:** each [release](../../releases/latest) has `playground.html` next to `absel-ai-library.zip`, built from that version.
+- **From the latest code:** on the **Actions** tab, choose **Build Playground link → Run workflow**. When the run finishes (about a minute), open it and download **playground** under *Artifacts*. GitHub delivers it zipped; unzip it to get the page. Downloads are kept for 30 days.
+- **On your computer:** `py tools/build_playground.py` writes `dist/playground.html`.
 
-Open `dist/playground.html` and click **Open the test site**. A temporary WordPress site starts in the browser (WordPress Playground) with Simple Membership, this plugin, a membership level, an active test member, the *Submit an exercise* page and pretty permalinks. It opens on the submission page, logged in as the administrator (`admin` / `password`). The test member's login is in `TEST_MEMBER` at the top of `tools/build_playground.py`, and `dist/playground.html` shows it with the steps for testing as a member. These accounts exist only inside Playground.
+Open `playground.html` and click **Open the test site**. A temporary WordPress site starts in the browser (WordPress Playground) with Simple Membership, this plugin, a membership level, an active test member, the *Submit an exercise* page and pretty permalinks. It opens on the submission page, logged in as the administrator (`admin` / `password`). The test member's login is in `TEST_MEMBER` at the top of `tools/build_playground.py`, and `dist/playground.html` shows it with the steps for testing as a member. These accounts exist only inside Playground.
 
-The plugin is built from the working copy and carried inside the link, because Playground can't download from this private repository. The part of a link after `#` isn't sent to any server. Rebuild after changing the plugin. The site is thrown away when the tab is closed or reloaded, and Playground doesn't send emails.
+The plugin is carried inside the link, because Playground can't download from this private repository. The part of a link after `#` isn't sent to any server. Keep the page private: anyone who has it has a copy of the plugin's code. The site is thrown away when the tab is closed or reloaded, and Playground doesn't send emails.
 
 ## Setup (staging copy first)
 

@@ -48,7 +48,10 @@ jobs:
           mkdir -p dist
           git archive --format=zip --prefix=absel-ai-library/ -o dist/absel-ai-library.zip HEAD:wp-plugin/absel-ai-library
 
+      - name: Build the Playground test page
+        run: python tools/build_playground.py
+
       - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" dist/absel-ai-library.zip --title "Plugin $GITHUB_REF_NAME" --generate-notes
+        run: gh release create "$GITHUB_REF_NAME" dist/absel-ai-library.zip dist/playground.html --title "Plugin $GITHUB_REF_NAME" --generate-notes

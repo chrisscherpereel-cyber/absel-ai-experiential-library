@@ -24,6 +24,7 @@ Writes dist/playground.html (open it and click the link) and prints the link's s
 import base64
 import io
 import json
+import re
 import zipfile
 from pathlib import Path
 
@@ -148,6 +149,7 @@ def main():
     link = "https://playground.wordpress.net/#" + base64.b64encode(data.encode("utf-8")).decode("ascii")
     OUT.parent.mkdir(exist_ok=True)
     m = TEST_MEMBER
+    version = re.search(r"define\( 'ABSEL_AIL_VERSION', '([^']+)'", (PLUGIN / "absel-ai-library.php").read_text(encoding="utf-8")).group(1)
     page = f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ABSEL Playground</title>
@@ -156,6 +158,7 @@ a.go{{display:inline-block;background:#2271b1;color:#fff;padding:10px 18px;borde
 code{{background:#f0f0f1;padding:1px 4px;border-radius:3px}}</style></head>
 <body>
 <h1>Try the ABSEL plugin in WordPress Playground</h1>
+<p>Plugin version {version}.</p>
 <p><a class="go" href="{link}" target="_blank" rel="noopener">Open the test site</a></p>
 <p>A temporary WordPress site starts in your browser (about a minute) with Simple Membership, this plugin,
 the <em>Submit an exercise</em> page and pretty permalinks. It opens on the submission page, logged in as the administrator.
@@ -169,7 +172,7 @@ Nothing is sent to absel.org, and the site disappears when you close or reload t
 <li>Log back in as the administrator at <code>/wp-login.php</code> (<code>admin</code> / <code>password</code>) and review it under
 <strong>AI Activities → Submissions</strong>. Emails aren't sent in Playground.</li>
 </ol>
-<p><small>Built from the working copy of wp-plugin/absel-ai-library by tools/build_playground.py. Rebuild after changing the plugin.</small></p>
+<p><small>Built from wp-plugin/absel-ai-library by tools/build_playground.py. Get a current copy from the latest release or the Actions tab (Build Playground link), or rebuild it after changing the plugin.</small></p>
 </body></html>
 """
     with open(OUT, "w", encoding="utf-8", newline="\n") as f:
