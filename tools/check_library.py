@@ -80,6 +80,8 @@ def check_form():
         errors.append(f"{form}: its copy of the schema is out of date; run py tools/build_form.py")
     if current["prompt"] != expected["prompt"]:
         errors.append(f"{form}: its copy of the author prompt is out of date; run py tools/build_form.py")
+    if current["emblem"] != expected["emblem"]:
+        errors.append(f"{form}: its copy of the SELAR emblem is out of date; run py tools/build_form.py")
     plugin_schema = build_form.PLUGIN_SCHEMA
     if not plugin_schema.is_file() or plugin_schema.read_text(encoding="utf-8") != build_form.SCHEMA.read_text(encoding="utf-8"):
         errors.append(f"{plugin_schema.relative_to(ROOT)} is out of date; run py tools/build_form.py")

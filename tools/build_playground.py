@@ -7,8 +7,11 @@ the browser. The link carries a blueprint that:
 - installs and activates this plugin from the working copy of wp-plugin/;
 - turns on pretty permalinks and flushes the rewrite rules;
 - creates a membership level and an active test member;
-- creates the "Submit an exercise" page with [absel_submit_exercise];
-- opens that page, logged in as the Playground administrator.
+- creates the SELAR home page ([selar_home], set as the front page), the
+  "What's in the SELAR?" page ([selar_browse]) and the "Submit an exercise" page
+  ([absel_submit_exercise]);
+- publishes the sample activity from activities/negotiation-supplier;
+- opens the home page, logged in as the Playground administrator.
 
 The repository is private, so Playground can't download the plugin from GitHub.
 Instead the plugin is zipped and embedded in the link itself. The part after "#"
@@ -36,6 +39,9 @@ OUT = ROOT / "dist" / "playground.html"
 TEST_MEMBER = {"user_name": "testmember", "password": "absel-playground-test", "email": "testmember@example.com",
                "first_name": "Test", "last_name": "Member"}
 SUBMIT_SLUG = "submit-an-exercise"
+# A finished activity to fill the shelf: its simulation and manifest (the guide is Markdown, which isn't served).
+SAMPLE = ROOT / "activities" / "negotiation-supplier"
+SAMPLE_FILES = ("index.html", "manifest.json")
 
 
 def plugin_zip():
@@ -116,16 +122,73 @@ if ( ! $page ) {
 	update_option( 'absel_ail_submit_page', get_permalink( $id ) );
 }
 
+// The SELAR home page (the emblem and both invitations) as the front page, and the
+// "What's in the SELAR?" page. Wide groups keep block themes from squeezing them.
+function absel_pg_page( $slug, $title, $shortcode ) {
+	$page = get_page_by_path( $slug );
+	if ( $page ) {
+		return $page->ID;
+	}
+	return wp_insert_post( array(
+		'post_type'    => 'page',
+		'post_status'  => 'publish',
+		'post_title'   => $title,
+		'post_name'    => $slug,
+		'post_content' => '<!-- wp:group {"align":"wide","layout":{"type":"constrained","contentSize":"1100px"}} --><div class="wp-block-group alignwide">'
+			. '<!-- wp:shortcode -->' . $shortcode . '<!-- /wp:shortcode --></div><!-- /wp:group -->',
+	) );
+}
+$home = absel_pg_page( 'selar', 'SELAR', '[selar_home]' );
+update_option( 'show_on_front', 'page' );
+update_option( 'page_on_front', $home );
+update_option( 'absel_ail_browse_page', get_permalink( absel_pg_page( 'whats-in-the-selar', 'Browse the SELAR', '[selar_browse]' ) ) );
+
+// The sample activity, published as an editor would after accepting it.
+$dir = ABSEL_AIL_CONTENT_DIR . '/__SAMPLE__';
+$existing = get_posts( array( 'post_type' => 'absel_activity', 'post_status' => 'any', 'meta_key' => '_absel_ail_folder', 'meta_value' => '__SAMPLE__', 'fields' => 'ids' ) );
+if ( is_file( $dir . '/manifest.json' ) && ! $existing ) {
+	$json = (string) file_get_contents( $dir . '/manifest.json' );
+	$view = absel_ail_manifest_view( json_decode( $json ) );
+	$content = '<!-- wp:paragraph --><p>' . esc_html( $view->summary ) . '</p><!-- /wp:paragraph -->';
+	if ( $view->learning_objectives ) {
+		$content .= '<!-- wp:heading {"level":3} --><h3>Learning objectives</h3><!-- /wp:heading --><!-- wp:list --><ul>';
+		foreach ( $view->learning_objectives as $objective ) {
+			$content .= '<!-- wp:list-item --><li>' . esc_html( $objective ) . '</li><!-- /wp:list-item -->';
+		}
+		$content .= '</ul><!-- /wp:list -->';
+	}
+	$id = wp_insert_post( array(
+		'post_type'    => 'absel_activity',
+		'post_status'  => 'publish',
+		'post_title'   => $view->title,
+		'post_excerpt' => (string) $view->summary,
+		'post_content' => $content,
+	) );
+	wp_set_object_terms( $id, array_map( 'absel_ail_label', $view->disciplines ), 'discipline' );
+	wp_set_object_terms( $id, array_map( 'absel_ail_label', $view->delivery_modes ), 'activity_format' );
+	update_post_meta( $id, '_absel_ail_folder', '__SAMPLE__' );
+	update_post_meta( $id, '_absel_ail_duration', absel_ail_range_text( $view->duration->in_class_minutes, 'minutes' ) );
+	update_post_meta( $id, '_absel_ail_group_size', $view->group_size ? absel_ail_range_text( $view->group_size, 'per team' ) : '' );
+	update_post_meta( $id, '_absel_ail_manifest', wp_slash( $json ) );
+}
+
 flush_rewrite_rules();
 """
 
 
 def blueprint():
-    setup = SETUP_PHP.replace("__MEMBER__", json.dumps(TEST_MEMBER)).replace("__SLUG__", SUBMIT_SLUG)
+    setup = (SETUP_PHP.replace("__MEMBER__", json.dumps(TEST_MEMBER)).replace("__SLUG__", SUBMIT_SLUG)
+             .replace("__SAMPLE__", SAMPLE.name))
+    # The sample activity's files go where the plugin keeps activity folders.
+    sample_files = [{"step": "mkdir", "path": f"/wordpress/wp-content/absel-ai-library/{SAMPLE.name}"}] + [
+        {"step": "writeFile", "path": f"/wordpress/wp-content/absel-ai-library/{SAMPLE.name}/{name}",
+         "data": (SAMPLE / name).read_text(encoding="utf-8")}
+        for name in SAMPLE_FILES
+    ]
     zip_b64 = base64.b64encode(plugin_zip()).decode("ascii")
     return {
         "$schema": "https://playground.wordpress.net/blueprint-schema.json",
-        "landingPage": f"/{SUBMIT_SLUG}/",
+        "landingPage": "/",
         "preferredVersions": {"php": "8.3", "wp": "latest"},
         "features": {"networking": True},
         "steps": [
@@ -139,6 +202,7 @@ def blueprint():
              "extractToPath": "/wordpress/wp-content/plugins"},
             {"step": "activatePlugin", "pluginName": "SELAR",
              "pluginPath": "absel-ai-library/absel-ai-library.php"},
+            *sample_files,
             {"step": "runPHP", "code": setup},
         ],
     }
@@ -161,7 +225,8 @@ code{{background:#f0f0f1;padding:1px 4px;border-radius:3px}}</style></head>
 <p>Plugin version {version}.</p>
 <p><a class="go" href="{link}" target="_blank" rel="noopener">Open the test site</a></p>
 <p>A temporary WordPress site starts in your browser (about a minute) with Simple Membership, this plugin,
-the <em>Submit an exercise</em> page and pretty permalinks. It opens on the submission page, logged in as the administrator.
+the SELAR home page, <em>What&rsquo;s in the SELAR?</em>, <em>Submit an exercise</em>, a sample activity and pretty permalinks.
+It opens on the SELAR home page, logged in as the administrator.
 Nothing is sent to absel.org, and the site disappears when you close or reload the tab.</p>
 <h2>Testing as a member</h2>
 <ol>

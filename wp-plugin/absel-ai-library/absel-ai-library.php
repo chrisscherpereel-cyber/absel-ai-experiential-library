@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       SELAR: Simulation & Experiential Learning Activities Repository
  * Description:       ABSEL's members-only Simulation & Experiential Learning Activities Repository (SELAR), gated by Simple Membership, with member submissions and an editor review queue.
- * Version:           0.4.3
+ * Version:           0.5.0
  * Requires PHP:      7.4
  * Requires at least: 6.0
  * Author:            ABSEL
@@ -14,7 +14,7 @@
 defined( 'ABSPATH' ) || exit;
 
 // Keep in step with "Version" above; a release is published by pushing the tag v<version>.
-define( 'ABSEL_AIL_VERSION', '0.4.3' );
+define( 'ABSEL_AIL_VERSION', '0.5.0' );
 define( 'ABSEL_AIL_FILE', __FILE__ );
 define( 'ABSEL_AIL_DIR', plugin_dir_path( __FILE__ ) );
 
@@ -33,6 +33,7 @@ require_once ABSEL_AIL_DIR . 'includes/submissions.php';
 require_once ABSEL_AIL_DIR . 'includes/review.php';
 require_once ABSEL_AIL_DIR . 'includes/submit-page.php';
 require_once ABSEL_AIL_DIR . 'includes/updater.php';
+require_once ABSEL_AIL_DIR . 'includes/brand.php';
 
 register_activation_hook( __FILE__, 'absel_ail_activate' );
 register_deactivation_hook( __FILE__, 'absel_ail_deactivate' );

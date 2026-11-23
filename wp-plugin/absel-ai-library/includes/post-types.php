@@ -21,7 +21,8 @@ function absel_ail_register_types() {
 		'public'       => true,
 		'has_archive'  => true,
 		'rewrite'      => array( 'slug' => 'ai-activities' ),
-		'menu_icon'    => 'dashicons-welcome-learn-more',
+		// The SELAR arch over a shelf of cards; WordPress recolours it to match the admin theme.
+		'menu_icon'    => 'data:image/svg+xml;base64,' . base64_encode( '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path fill="black" d="M10 1.5C4.8 1.5 1 5.6 1 10.5V18h2.6v-7.5C3.6 7 6.4 4.1 10 4.1s6.4 2.9 6.4 6.4V18H19v-7.5c0-4.9-3.8-9-9-9zM5 12.5h10V14H5zM5.6 8.4h2.6v3.4H5.6zm3.1 0h2.6v3.4H8.7zm3.1-.9h2.6v4.3h-2.6z"/></svg>' ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 		'show_in_rest' => true,
 		'supports'     => array( 'title', 'editor', 'excerpt', 'thumbnail', 'revisions' ),
 	) );
@@ -106,7 +107,8 @@ add_filter( 'the_content', function ( $content ) {
 	if ( ! is_singular( 'absel_activity' ) || ! in_the_loop() || ! is_main_query() ) {
 		return $content;
 	}
-	return $content . absel_ail_activity_panel( get_the_ID() );
+	return $content . absel_ail_activity_panel( get_the_ID() )
+		. '<p class="selar"><a class="selar-back" href="' . esc_url( absel_ail_browse_page_url() ) . '">' . esc_html__( '← Back to What’s in the SELAR?', 'absel-ai-library' ) . '</a></p>';
 }, 20 );
 
 // The panel differs per visitor (and Simple Membership members are often not
@@ -125,10 +127,10 @@ function absel_ail_activity_panel( $post_id ) {
 	$duration = get_post_meta( $post_id, '_absel_ail_duration', true );
 	$group    = get_post_meta( $post_id, '_absel_ail_group_size', true );
 
-	$html = '<div class="absel-ail-panel" style="border:1px solid #ccd0d4;border-radius:6px;padding:1em 1.25em;margin:1.5em 0">';
+	$html = '<div class="absel-ail-panel selar"><p class="selar-panel-title">' . esc_html__( 'Use this activity', 'absel-ai-library' ) . '</p>';
 	if ( $duration || $group ) {
 		$html .= '<p>';
-		$html .= $duration ? '<strong>' . esc_html__( 'Duration:', 'absel-ai-library' ) . '</strong> ' . esc_html( $duration ) . ' ' : '';
+		$html .= $duration ? '<strong>' . esc_html__( 'Duration:', 'absel-ai-library' ) . '</strong> ' . esc_html( $duration ) . ( $group ? '<br>' : '' ) : '';
 		$html .= $group ? '<strong>' . esc_html__( 'Group size:', 'absel-ai-library' ) . '</strong> ' . esc_html( $group ) : '';
 		$html .= '</p>';
 	}
@@ -149,13 +151,13 @@ function absel_ail_activity_panel( $post_id ) {
 	}
 	if ( is_file( $dir . '/index.html' ) ) {
 		$html .= sprintf(
-			'<p><a class="button wp-element-button" href="%s" target="_blank" rel="noopener">%s</a></p>',
+			'<p><a class="selar-button" href="%s" target="_blank" rel="noopener">%s</a></p>',
 			esc_url( absel_ail_file_url( $folder . '/index.html' ) ),
 			esc_html__( 'Launch simulation', 'absel-ai-library' )
 		);
 		$student_link = add_query_arg( 'class', absel_ail_class_pass_create( $folder ), absel_ail_file_url( $folder . '/index.html' ) );
 		$html        .= sprintf(
-			'<p><label><strong>%1$s</strong><br><input type="text" readonly value="%2$s" onclick="this.select()" style="width:100%%;font-family:monospace;font-size:.85em"></label><br><small>%3$s</small></p>',
+			'<p><label><strong>%1$s</strong><br><input type="text" readonly value="%2$s" onclick="this.select()"></label><br><small>%3$s</small></p>',
 			esc_html__( 'Link for your students', 'absel-ai-library' ),
 			esc_attr( $student_link ),
 			esc_html( sprintf(

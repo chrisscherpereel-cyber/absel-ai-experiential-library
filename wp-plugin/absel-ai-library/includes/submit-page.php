@@ -67,8 +67,11 @@ add_shortcode( 'absel_submit_exercise', function () {
 	if ( $permalink && get_option( 'absel_ail_submit_page' ) !== $permalink ) {
 		update_option( 'absel_ail_submit_page', $permalink, false );
 	}
+	$banner = '<div class="selar"><div class="selar-banner selar-banner--put">' . absel_ail_shelf_icon( 'put' )
+		. '<div><h2>' . esc_html__( 'Put it in the SELAR.', 'absel-ai-library' ) . '</h2>'
+		. '<p>' . esc_html__( 'Have a classroom exercise you’d gladly teach again? Anything from an idea to a finished simulation is welcome.', 'absel-ai-library' ) . '</p></div></div></div>';
 	if ( ! absel_ail_member_has_access() ) {
-		return '<p>' . sprintf(
+		return $banner . '<p class="selar selar-notice">' . sprintf(
 			/* translators: 1: login URL, 2: join URL */
 			wp_kses_post( __( 'Submitting exercises is open to ABSEL members. <a href="%1$s">Log in</a> or <a href="%2$s">become a member</a>.', 'absel-ai-library' ) ),
 			esc_url( absel_ail_login_url() ),
@@ -77,7 +80,7 @@ add_shortcode( 'absel_submit_exercise', function () {
 	}
 	$src = home_url( '/ail-submit/' );
 	// The form reports its height so the frame never needs its own scrollbar.
-	return sprintf(
+	return $banner . sprintf(
 		'<iframe id="absel-submit-frame" src="%1$s" title="%2$s" style="display:block;width:100%%;min-height:900px;border:0"></iframe>'
 		. '<p style="font-size:.9em"><a href="%1$s" target="_blank" rel="noopener">%3$s</a></p>'
 		. '<script>(function(){var f=document.getElementById("absel-submit-frame");window.addEventListener("message",function(e){'

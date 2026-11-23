@@ -1,0 +1,87 @@
+/* SELAR brand: the brick arch, the shelf of activity cards, and the two invitations. */
+.selar {
+	--selar-brick: #a1311f;
+	--selar-brick-dark: #7a2214;
+	--selar-green: #0f4a40;
+	--selar-green-dark: #0a352e;
+	--selar-gold: #f0b43a;
+	--selar-cream: #fbf3e6;
+	--selar-card: #fffaf1;
+	--selar-ink: #123f38;
+	--selar-muted: #4d6460;
+	--selar-line: #e6d9c2;
+	--selar-slab: "Zilla Slab", Rockwell, "Roboto Slab", Georgia, serif;
+	--selar-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+	font-family: var(--selar-serif);
+	color: var(--selar-ink);
+	box-sizing: border-box;
+}
+.selar *, .selar *::before, .selar *::after { box-sizing: inherit; }
+.selar a { color: inherit; }
+.selar :focus-visible { outline: 3px solid var(--selar-gold); outline-offset: 3px; }
+
+/* Home: emblem, name, tagline, then the two invitations. */
+.selar-home { background: var(--selar-cream); border-radius: 16px; padding: clamp(20px, 4vw, 48px) clamp(16px, 4vw, 40px); }
+.selar-hero { text-align: center; }
+.selar-emblem { display: block; width: min(100%, 560px); height: auto; margin: 0 auto; }
+.selar-emblem svg { display: block; width: 100%; height: auto; }
+.selar-name { font-family: var(--selar-slab); font-weight: 700; font-size: clamp(1.15rem, 2.6vw, 1.75rem); line-height: 1.2; margin: .6em 0 .15em; color: var(--selar-ink); }
+.selar-tagline { font-family: var(--selar-slab); font-style: italic; font-weight: 500; font-size: clamp(1.05rem, 2.2vw, 1.45rem); margin: 0; color: var(--selar-green); }
+.selar-invites { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(12px, 2vw, 24px); margin-top: clamp(20px, 4vw, 40px); }
+@media (max-width: 700px) { .selar-invites { grid-template-columns: minmax(0, 1fr); } }
+.selar-invite { display: flex; align-items: center; gap: 18px; padding: 20px 22px; border-radius: 14px; text-decoration: none !important; transition: transform .15s ease, box-shadow .15s ease; min-height: 150px; }
+.selar-invite:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(18, 63, 56, .18); }
+.selar-invite svg { flex: none; width: clamp(110px, 30%, 170px); height: auto; }
+.selar-invite-text { min-width: 0; }
+@media (max-width: 520px) { .selar-invite { flex-direction: column; align-items: flex-start; gap: 10px; min-height: 0; } .selar-invite svg { width: 120px; } }
+.selar-invite-lead { display: block; font-size: clamp(1rem, 1.8vw, 1.2rem); line-height: 1.3; }
+.selar-invite-cta { display: block; font-family: var(--selar-slab); font-weight: 700; font-size: clamp(1.3rem, 2.8vw, 1.9rem); line-height: 1.1; margin-top: .3em; }
+.selar-invite--put { background: var(--selar-green); color: var(--selar-cream) !important; }
+.selar-invite--explore { background: var(--selar-gold); color: var(--selar-green-dark) !important; }
+.selar-invite--explore .selar-invite-cta { font-size: clamp(1.6rem, 3.4vw, 2.4rem); }
+
+/* Banners at the top of the browse and submission pages. */
+.selar-banner { display: flex; align-items: center; gap: 16px; padding: 16px 20px; border-radius: 14px; margin: 0 0 20px; }
+.selar-banner svg { flex: none; width: 110px; height: auto; }
+.selar-banner h2 { font-family: var(--selar-slab); font-weight: 700; font-size: clamp(1.4rem, 3vw, 2rem); line-height: 1.1; margin: 0; color: inherit; }
+.selar-banner p { margin: .3em 0 0; }
+.selar-banner--put { background: var(--selar-green); color: var(--selar-cream); }
+.selar-banner--explore { background: var(--selar-gold); color: var(--selar-green-dark); }
+@media (max-width: 520px) { .selar-banner svg { width: 80px; } }
+
+/* What's in the SELAR? */
+.selar-search { display: grid; grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr)) auto; gap: 10px; align-items: end; background: var(--selar-cream); border: 1px solid var(--selar-line); border-radius: 12px; padding: 14px; margin-bottom: 18px; }
+@media (max-width: 860px) { .selar-search { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .selar-search .selar-field--q { grid-column: 1 / -1; } }
+@media (max-width: 480px) { .selar-search { grid-template-columns: minmax(0, 1fr); } }
+.selar-field label { display: block; font-size: .85rem; font-weight: 600; margin-bottom: 4px; }
+.selar-field input, .selar-field select { width: 100%; font: inherit; font-size: 1rem; color: var(--selar-ink); background: #fff; border: 1px solid var(--selar-line); border-radius: 8px; padding: 8px 10px; min-height: 42px; }
+.selar-button, .selar .button.selar-button { display: inline-block; font-family: var(--selar-slab); font-weight: 700; font-size: 1.05rem; background: var(--selar-green); color: var(--selar-cream) !important; border: 0; border-radius: 8px; padding: 9px 18px; min-height: 42px; cursor: pointer; text-decoration: none !important; }
+.selar-button:hover { background: var(--selar-green-dark); }
+.selar-button--gold { background: var(--selar-gold); color: var(--selar-green-dark) !important; }
+.selar-button--gold:hover { background: #e3a628; }
+.selar-count { color: var(--selar-muted); margin: 0 0 12px; }
+.selar-shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr)); gap: 16px; list-style: none; margin: 0; padding: 0; }
+.selar-card { position: relative; display: flex; flex-direction: column; background: var(--selar-card); border: 1px solid var(--selar-line); border-top: 6px solid var(--selar-green); border-radius: 12px; padding: 16px 18px; margin: 0; }
+.selar-card:nth-child(3n) { border-top-color: var(--selar-gold); }
+.selar-card:nth-child(3n + 2) { border-top-color: var(--selar-brick); }
+.selar-card h3 { font-family: var(--selar-slab); font-weight: 700; font-size: 1.25rem; line-height: 1.2; margin: 0 0 6px; }
+.selar-card h3 a { text-decoration: none; }
+.selar-card h3 a::after { content: ""; position: absolute; inset: 0; border-radius: 12px; }
+.selar-card:hover { box-shadow: 0 6px 16px rgba(18, 63, 56, .14); }
+.selar-card p { margin: 0 0 10px; font-size: .95rem; color: var(--selar-ink); }
+.selar-meta { margin-top: auto; display: flex; flex-wrap: wrap; gap: 6px; font-size: .8rem; }
+.selar-chip { background: var(--selar-cream); border: 1px solid var(--selar-line); border-radius: 999px; padding: 2px 10px; }
+.selar-empty { background: var(--selar-cream); border-radius: 12px; padding: 20px; text-align: center; }
+.selar-pages { margin-top: 18px; display: flex; gap: 6px; flex-wrap: wrap; }
+.selar-pages .page-numbers { display: inline-block; min-width: 40px; text-align: center; padding: 7px 10px; border: 1px solid var(--selar-line); border-radius: 8px; text-decoration: none; background: #fff; }
+.selar-pages .page-numbers.current { background: var(--selar-green); color: var(--selar-cream); border-color: var(--selar-green); }
+
+/* The launch/download panel on each activity page. */
+.absel-ail-panel.selar { background: var(--selar-cream); border: 1px solid var(--selar-line); border-left: 6px solid var(--selar-brick); border-radius: 12px; padding: 18px 20px; margin: 1.5em 0; }
+.absel-ail-panel.selar .selar-panel-title { font-family: var(--selar-slab); font-weight: 700; font-size: 1.2rem; margin: 0 0 .5em; }
+.absel-ail-panel.selar input[type=text] { width: 100%; font-family: ui-monospace, Consolas, monospace; font-size: .85em; padding: 8px; border: 1px solid var(--selar-line); border-radius: 8px; background: #fff; color: var(--selar-ink); }
+.absel-ail-panel.selar ul { margin: .3em 0 0; padding-left: 1.2em; }
+.selar-back { display: inline-block; margin-top: .5em; font-weight: 600; }
+
+/* Members-only notices. */
+.selar-notice { background: var(--selar-cream); border: 1px solid var(--selar-line); border-radius: 12px; padding: 16px 18px; }

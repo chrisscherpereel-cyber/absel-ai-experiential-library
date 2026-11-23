@@ -15,9 +15,11 @@ tools/
   check_library.py       validates manifests and packages; keeps rules, prompt and plugin copies in sync
   build_form.py          copies the schema and prompt into the plugin (run after changing either)
   build_playground.py    builds dist/playground.html, a one-click test site in WordPress Playground
+  make_emblem.py         draws the SELAR emblem (assets/selar-emblem.svg)
 wp-plugin/
   absel-ai-library/      WordPress plugin that publishes and protects the library
     assets/submit.html   submission page: copy the prompt, paste the AI's reply, edit, submit
+    assets/selar.css     SELAR brand styles; assets/selar-emblem.svg is the emblem (arch, shelf, lettering)
 ```
 
 Every activity has a `manifest.json` describing it (see [the indexing rules](schema/INDEXING-RULES.md)). After changing an activity, the schema, the rules or the prompt, run:
@@ -31,6 +33,9 @@ Simulations are self-contained web pages that run in the browser. Nothing calls 
 
 ## What the plugin does
 
+- **SELAR branding.** The emblem (the brick arch over a shelf of activity cards, with the SELAR lettering), the tagline "A place for activities worth keeping", and the two invitations: **Put it in the SELAR.** for contributing and **What's in the SELAR?** for exploring. Brick red, shelf green, card gold and cream throughout, with Zilla Slab and Source Serif 4 type (loaded from Google Fonts; a site can turn that off with the `absel_ail_google_fonts` filter, and the pages fall back to Rockwell and Georgia).
+- **Home page.** The `[selar_home]` shortcode shows the emblem, the full name, the tagline and both invitations. Put it on the site's SELAR landing page.
+- **What's in the SELAR?** The `[selar_browse]` shortcode lists published activities as cards on a shelf, with keyword search (ranked by relevance) and Discipline, Format and AI topic filters. Descriptions are public; files stay members-only.
 - **SELAR** activities (the **SELAR** admin menu; pages at `/ai-activities/`) with AI Topic, Format and Discipline filters, plus duration and group-size fields.
 - **Protected files.** Activity folders live in a directory the web server will not serve directly. Members reach them through `/ail-files/<folder>/…`, which checks Simple Membership first. Expired and inactive accounts are refused.
 - **Student links.** Each activity page gives members a link to post in their LMS. It opens only the simulation (not instructor materials) for 14 days, needs no student account, and stops working if the member's account lapses.
@@ -50,7 +55,7 @@ To try the plugin without touching absel.org, get the one-click test page, `play
 - **From the latest code:** on the **Actions** tab, choose **Build Playground link → Run workflow**. When the run finishes (about a minute), open it and download **playground.html** under *Artifacts*. Downloads are kept for 30 days.
 - **On your computer:** `py tools/build_playground.py` writes `dist/playground.html`.
 
-Open `playground.html` and click **Open the test site**. A temporary WordPress site starts in the browser (WordPress Playground) with Simple Membership, this plugin, a membership level, an active test member, the *Submit an exercise* page and pretty permalinks. It opens on the submission page, logged in as the administrator (`admin` / `password`). The test member's login is in `TEST_MEMBER` at the top of `tools/build_playground.py`, and `dist/playground.html` shows it with the steps for testing as a member. These accounts exist only inside Playground.
+Open `playground.html` and click **Open the test site**. A temporary WordPress site starts in the browser (WordPress Playground) with Simple Membership, this plugin, a membership level, an active test member, the SELAR home page, *What's in the SELAR?*, the *Submit an exercise* page, the sample negotiation activity and pretty permalinks. It opens on the SELAR home page, logged in as the administrator (`admin` / `password`). The test member's login is in `TEST_MEMBER` at the top of `tools/build_playground.py`, and `dist/playground.html` shows it with the steps for testing as a member. These accounts exist only inside Playground.
 
 The plugin is carried inside the link, because Playground can't download from this private repository. The part of a link after `#` isn't sent to any server. Keep the page private: anyone who has it has a copy of the plugin's code. The site is thrown away when the tab is closed or reloaded, and Playground doesn't send emails.
 
@@ -65,7 +70,10 @@ Use Bluehost's staging tool (in the Bluehost dashboard, or the Bluehost plugin i
    ```
    Without this line, the plugin uses `wp-content/absel-ai-library` and blocks direct access with `.htaccess`.
 3. **Configure** under **Settings → SELAR**: check the status items, choose the membership levels allowed in (leave empty for all active members), and enter the editors' email addresses for new submissions.
-4. **Create the submission page.** Add a page (for example "Submit an exercise") containing the shortcode `[absel_submit_exercise]`, publish it and view it once so the plugin records its address for emails. Link to it from the members' menu.
+4. **Create the SELAR pages.** View each page once after publishing it, so the plugin records its address (for emails and for the invitations' links).
+   - **Submission page** ("Put it in the SELAR."): a page containing `[absel_submit_exercise]`. Link to it from the members' menu.
+   - **Browse page** ("What's in the SELAR?"): a page containing `[selar_browse]`.
+   - **Home page:** a page containing `[selar_home]`, for example at `/selar/`. In the block editor, put the shortcode in a group set to **Wide width** so the emblem and invitations aren't squeezed by the theme's text column.
 5. **Allow large enough uploads.** The status list shows the largest file members can upload. Bluehost's default is often too small for videos and slide decks: in **cPanel → MultiPHP INI Editor**, set `upload_max_filesize` to `100M` and `post_max_size` to `110M`.
 6. **Editors** need the WordPress Editor (or Administrator) role to see **SELAR → Submissions**.
 7. **Upload an activity** (or submit it through the new page). Copy `activities/negotiation-supplier/` into the library directory (SFTP or File Manager). Export `facilitator-guide.md` to PDF first and upload the PDF; `.md` files are not served.
@@ -106,6 +114,8 @@ To roll back, download an earlier release's zip and upload it with **Plugins →
 
 ## Test checklist
 
+- [ ] The SELAR home page shows the emblem, name, tagline and both invitations; **Put it in the SELAR.** opens the submission page and **What's in the SELAR?** opens the browse page. Check it on a phone too.
+- [ ] **What's in the SELAR?** lists published activities, the search and filters narrow them, and a search with no results offers **Put it in the SELAR.**
 - [ ] Logged out: the activity page shows "Log in / become a member", and `/ail-files/negotiation-supplier/index.html` redirects to the login page.
 - [ ] Direct file URL is refused: `https://<site>/wp-content/absel-ai-library/negotiation-supplier/index.html` returns 403, or 404 if the files are outside the web root.
 - [ ] As an active member: **Launch simulation** works and the PDF downloads.
